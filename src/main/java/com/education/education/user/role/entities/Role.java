@@ -1,7 +1,7 @@
 package com.education.education.user.role.entities;
 
+import com.education.education.base.auditableEntity.AuditableEntity;
 import com.education.education.user.user.entities.User;
-import com.education.education.user.user.enums.ERole;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -17,15 +17,14 @@ import java.util.UUID;
 @AllArgsConstructor
 @Setter
 @Getter
-public class Role {
+public class Role extends AuditableEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "role_id", nullable = false)
     private UUID id;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ERole role;
+    private String role;
 
     @ManyToMany(mappedBy = "role")
     private List<User> users;

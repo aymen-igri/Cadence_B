@@ -1,4 +1,4 @@
-package com.education.education.user.user.dto;
+package com.education.education.user.user.dto.request;
 
 public record SignInDTORequest(
         String username,

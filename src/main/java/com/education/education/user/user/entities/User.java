@@ -1,8 +1,10 @@
 package com.education.education.user.user.entities;
 
+import com.education.education.base.auditableEntity.AuditableEntity;
 import com.education.education.user.role.entities.Role;
 import com.education.education.user.user.enums.EGender;
 import com.education.education.user.user.enums.EStatus;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -11,11 +13,12 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "users")
+@Inheritance(strategy = InheritanceType.JOINED)
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
-public abstract class User {
+public class User extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -32,16 +35,17 @@ public abstract class User {
     @Column(nullable = false)
     private EGender gender;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String phone;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String username;
 
     @Column(nullable = false)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
     @ManyToMany
