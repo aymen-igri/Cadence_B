@@ -4,6 +4,7 @@ import com.education.education.user.role.dto.request.AddRoleToUserRequest;
 import com.education.education.user.role.dto.request.NewRoleRequest;
 import com.education.education.user.role.dto.response.NewRoleResponse;
 import com.education.education.user.role.services.RoleService;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,14 +21,14 @@ public class RoleController {
 
     @PostMapping("/add")
     public ResponseEntity<NewRoleResponse> addRole(
-            @RequestBody NewRoleRequest role
+            @Valid @RequestBody NewRoleRequest role
     ){
         return ResponseEntity.ok(roleService.createRole(role));
     }
 
     @PostMapping("/add-to-user")
     public ResponseEntity<?> addRoleToUser(
-            @RequestBody AddRoleToUserRequest role
+            @Valid @RequestBody AddRoleToUserRequest role
     ){
         return ResponseEntity.ok(roleService.addRoleToUser(role));
     }

@@ -5,6 +5,7 @@ import com.education.education.auth.services.AuthService;
 import com.education.education.user.user.dto.request.AddUserRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.hibernate.boot.internal.Abstract;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +26,7 @@ public class AuthController {
 
     @PostMapping("/signUp")
     public ResponseEntity<SignUpDTOResponse> signUp(
-            @RequestBody AddUserRequest newUser
+            @Valid @RequestBody AddUserRequest newUser
     ){
         return ResponseEntity.ok(authService.signUp(newUser));
     }

@@ -3,6 +3,7 @@ package com.education.education.user.user.dto.request;
 import com.education.education.user.user.enums.EGender;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record AddUserRequest(
@@ -14,7 +15,7 @@ public record AddUserRequest(
         @Size(min = 3, message = "Last name should contain at least 2 characters")
         String lastName,
 
-        @NotBlank(message = "Gender is required")
+        @NotNull(message = "Gender is required")
         EGender gender,
 
         @NotBlank(message = "Email is required")
