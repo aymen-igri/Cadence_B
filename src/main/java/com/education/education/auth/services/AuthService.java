@@ -1,26 +1,74 @@
 package com.education.education.auth.services;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.education.education.auth.deo.requests.SignUpDTORequest;
 import com.education.education.auth.deo.responses.SignUpDTOResponse;
 import com.education.education.auth.mappers.AuthMapper;
+import com.education.education.auth.utils.AuthUtils;
 import com.education.education.user.generalUser.entities.GeneralUser;
+import com.education.education.user.role.entities.Role;
+import com.education.education.user.user.entities.User;
 import com.education.education.user.user.repositories.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
+import java.util.*;
 
 @Service
 @AllArgsConstructor
+@Transactional
 public class AuthService {
 
     private final UserRepository userRepository;
     private final AuthMapper authMapper;
+    private final AuthUtils authUtils;
 
-    @Transactional
     public SignUpDTOResponse signUp(SignUpDTORequest request){
         GeneralUser user = authMapper.toGeneralUser(request);
         userRepository.save(user);
         return authMapper.toSignUpResponse(user);
+    }
+
+    public void refreshToken(HttpServletRequest req, HttpServletResponse res) throws IOException {
+        String authToken = req.getHeader("Authorization");
+        if(authToken != null && authToken.startsWith("Bearer ")){
+            try{
+                //get refresh toekn
+                String jwt = authToken.substring(7);
+                Algorithm algorithm = Algorithm.HMAC256(authUtils.getMySecret());
+                JWTVerifier jwtVerifier = JWT.require(algorithm).build();
+                DecodedJWT decodedJWT = jwtVerifier.verify(jwt);
+                String username = decodedJWT.getSubject();
+                User user = userRepository.findByUsername(username);
+                // create access token
+                String jwtAccessToken = JWT.create()
+                        .withSubject(user.getUsername())
+                        .withExpiresAt(new Date(System.currentTimeMillis()*10*60*1000)) // access token got 10 minutes before it expire
+                        .withIssuer(req.getRequestURL().toString())
+                        .withClaim("roles", user.getRole().stream().map(Role::getRole).toList())
+                        .sign(algorithm);
+
+                Map<String, String> idToken = new HashMap<>();
+                idToken.put("access-token", jwtAccessToken);
+                idToken.put("refresh-token", jwt);
+                res.setContentType("application/json");
+                new ObjectMapper().writeValue(res.getOutputStream(), idToken);
+
+            }catch(Exception e){
+                res.setHeader("error", e.getMessage());
+                res.sendError(HttpServletResponse.SC_FORBIDDEN);
+            }
+        }else{
+            throw new RuntimeException("Refresh token is missing");
+        }
     }
 
 }
