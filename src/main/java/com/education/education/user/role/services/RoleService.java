@@ -13,6 +13,8 @@ import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+
 @Service
 @AllArgsConstructor
 @Transactional
@@ -31,7 +33,10 @@ public class RoleService {
     public AddRoleToUserResponse addRoleToUser(AddRoleToUserRequest request){
         User user = userRepository.findByUsername(request.username());
         Role role = roleRepository.findByRole(request.roleName());
-        
+
+        if (user.getRole() == null){
+           user.setRole(new ArrayList<>());
+        }
         user.getRole().add(role);
         userRepository.save(user);
         

@@ -4,14 +4,19 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.education.education.auth.deo.requests.SignUpDTORequest;
 import com.education.education.auth.deo.responses.SignUpDTOResponse;
 import com.education.education.auth.mappers.AuthMapper;
 import com.education.education.auth.utils.AuthUtils;
-import com.education.education.user.generalUser.entities.GeneralUser;
+import com.education.education.user.role.dto.request.AddRoleToUserRequest;
+import com.education.education.user.role.dto.response.AddRoleToUserResponse;
 import com.education.education.user.role.entities.Role;
+import com.education.education.user.role.services.RoleService;
+import com.education.education.user.user.dto.request.AddUserRequest;
+import com.education.education.user.user.dto.response.AddUserResponse;
 import com.education.education.user.user.entities.User;
+import com.education.education.user.user.mappers.UserMapper;
 import com.education.education.user.user.repositories.UserRepository;
+import com.education.education.user.user.services.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
@@ -28,13 +33,21 @@ import java.util.*;
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final AuthMapper authMapper;
     private final AuthUtils authUtils;
+    private final UserService userService;
+    private final RoleService roleService;
 
-    public SignUpDTOResponse signUp(SignUpDTORequest request){
-        GeneralUser user = authMapper.toGeneralUser(request);
-        userRepository.save(user);
-        return authMapper.toSignUpResponse(user);
+    public SignUpDTOResponse signUp(AddUserRequest request){
+        AddUserResponse addUserResponse = userService.addUser(request);
+        AddRoleToUserRequest addRoleToUserRequest = new AddRoleToUserRequest(
+                addUserResponse.username(),
+                "ROLE_GENERAL_USER"
+        );
+        AddRoleToUserResponse addRoleToUserResponse = roleService.addRoleToUser(addRoleToUserRequest);
+        return new SignUpDTOResponse(
+                addUserResponse,
+                addRoleToUserResponse
+        );
     }
 
     public void refreshToken(HttpServletRequest req, HttpServletResponse res) throws IOException {
