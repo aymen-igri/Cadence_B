@@ -25,6 +25,10 @@ public class RoleService {
     private final RoleMapper roleMapper;
 
     public NewRoleResponse createRole(NewRoleRequest request){
+        Role existingRole = roleRepository.findByRole(request.role());
+        if (existingRole != null){
+            throw new IllegalArgumentException("Role already exists");
+        }
         Role role = roleMapper.toRole(request);
         roleRepository.save(role);
         return roleMapper.toNewRoleResponse(role);
@@ -34,13 +38,21 @@ public class RoleService {
         User user = userRepository.findByUsername(request.username());
         Role role = roleRepository.findByRole(request.roleName());
 
+        if (role == null){
+            throw new IllegalArgumentException("Role not found");
+        }
+
+        if (user == null){
+            throw new IllegalArgumentException("User not found");
+        }
+
         if (user.getRole() == null){
            user.setRole(new ArrayList<>());
         }
+
         user.getRole().add(role);
         userRepository.save(user);
-        
-        // Return your response logic here
-        return roleMapper.toAddRoleUserResponse(user); // Adjust this based on your actual response constructor/mapper
+
+        return roleMapper.toAddRoleUserResponse(user);
     }
 }

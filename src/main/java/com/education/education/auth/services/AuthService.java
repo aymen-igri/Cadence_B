@@ -21,6 +21,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
 
@@ -76,12 +77,10 @@ public class AuthService {
                 new ObjectMapper().writeValue(res.getOutputStream(), idToken);
 
             }catch(Exception e){
-                res.setHeader("error", e.getMessage());
-                res.sendError(HttpServletResponse.SC_FORBIDDEN);
+                throw new AccessDeniedException(e.getMessage());
             }
         }else{
-            throw new RuntimeException("Refresh token is missing");
+            throw new IllegalArgumentException("Refresh token is missing");
         }
     }
-
 }

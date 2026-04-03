@@ -19,6 +19,19 @@ public class UserService {
 
     public AddUserResponse addUser(AddUserRequest request){
         User user = userMapper.toUser(request);
+
+        if(userRepository.findByUsername(user.getUsername()) != null){
+            throw new IllegalArgumentException("user already exists, change the username");
+        }
+
+        if(userRepository.findByEmail(user.getEmail()) != null){
+            throw new IllegalArgumentException("user already exists, change the email");
+        }
+
+        if(userRepository.findByPhone(user.getPhone()) != null){
+            throw new IllegalArgumentException("user already exists, change the phone number");
+        }
+
         userRepository.save(user);
         return userMapper.toAddUserResponseDTO(user);
     }
