@@ -27,6 +27,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     private final AuthenticationManager authenticationManager;
     private final AuthUtils authUtils;
     private final UserRepository userRepository;
+    
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest req, HttpServletResponse res){
@@ -49,7 +50,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         Algorithm algorithm = Algorithm.HMAC256(authUtils.getMySecret());
         String jwtAccessToken = JWT.create()
                 .withSubject(user.getUsername())
-                .withExpiresAt(new Date(System.currentTimeMillis()*10*60*1000)) // access token got 10 minutes before it expire
+                .withExpiresAt(new Date(System.currentTimeMillis() + 10*60*1000)) // access token got 10 minutes before it expire
                 .withIssuer(req.getRequestURL().toString())
                 .withClaim("roles", userDetails.getAuthorities().stream().map(auth -> auth.getAuthority()).toList())
                 .sign(algorithm);
