@@ -5,16 +5,13 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.education.education.auth.deo.responses.SignUpDTOResponse;
-import com.education.education.auth.mappers.AuthMapper;
 import com.education.education.auth.utils.AuthUtils;
 import com.education.education.user.role.dto.request.AddRoleToUserRequest;
-import com.education.education.user.role.dto.response.AddRoleToUserResponse;
 import com.education.education.user.role.entities.Role;
 import com.education.education.user.role.services.RoleService;
 import com.education.education.user.user.dto.request.AddUserRequest;
 import com.education.education.user.user.dto.response.AddUserResponse;
 import com.education.education.user.user.entities.User;
-import com.education.education.user.user.mappers.UserMapper;
 import com.education.education.user.user.repositories.UserRepository;
 import com.education.education.user.user.services.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -44,11 +41,32 @@ public class AuthService {
                 addUserResponse.username(),
                 "ROLE_GENERAL_USER"
         );
-        AddRoleToUserResponse addRoleToUserResponse = roleService.addRoleToUser(addRoleToUserRequest);
-        return new SignUpDTOResponse(
-                addUserResponse,
-                addRoleToUserResponse
+        roleService.addRoleToUser(addRoleToUserRequest);
+
+        Algorithm algorithm = Algorithm.HMAC256(authUtils.getMySecret());
+        String jwtAccessToken = JWT.create()
+                .withSubject(addUserResponse.username())
+                .withExpiresAt(new Date(System.currentTimeMillis()*10*60*1000))
+                .withClaim("roles", List.of("ROLE_GENERAL_USER"))
+                .sign(algorithm);
+
+        String jwtRefreshToken = JWT.create()
+                .withSubject(addUserResponse.username())
+                .sign(algorithm);
+
+        SignUpDTOResponse.Tokens tokens = new SignUpDTOResponse.Tokens(jwtAccessToken, jwtRefreshToken);
+        SignUpDTOResponse.AuthUser user = new SignUpDTOResponse.AuthUser(
+                addUserResponse.id(),
+                addUserResponse.firstName(),
+                addUserResponse.LastName(),
+                addUserResponse.username(),
+                addUserResponse.email(),
+                addUserResponse.phone(),
+                addUserResponse.gender() != null ? addUserResponse.gender().name() : null,
+                "ROLE_GENERAL_USER"
         );
+
+        return new SignUpDTOResponse(tokens, user);
     }
 
     public void refreshToken(HttpServletRequest req, HttpServletResponse res) throws IOException {
