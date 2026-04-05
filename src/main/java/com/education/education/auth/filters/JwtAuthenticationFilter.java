@@ -31,10 +31,22 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest req, HttpServletResponse res){
-        String username = req.getParameter("username");
-        String password = req.getParameter("password");
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username,password);
-        return authenticationManager.authenticate(authenticationToken);
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            @SuppressWarnings("unchecked")
+            Map<String, String> credentials = mapper.readValue(req.getInputStream(), Map.class);
+            
+            String username = credentials.get("username");
+            if (username == null) {
+                username = credentials.get("email");
+            }
+            String password = credentials.get("password");
+
+            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, password);
+            return authenticationManager.authenticate(authenticationToken);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to parse authentication request body", e);
+        }
     }
 
     @Override
@@ -65,5 +77,19 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         idToken.put("refresh-token", jwtRefreshToken);
         res.setContentType("application/json");
         new ObjectMapper().writeValue(res.getOutputStream(), idToken);
+    }
+
+    @Override
+    protected void unsuccessfulAuthentication(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            org.springframework.security.core.AuthenticationException failed
+    ) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json");
+        Map<String, Object> errorDetails = new HashMap<>();
+        errorDetails.put("status", 401);
+        errorDetails.put("message", "Invalid credentials");
+        new ObjectMapper().writeValue(response.getOutputStream(), errorDetails);
     }
 }
