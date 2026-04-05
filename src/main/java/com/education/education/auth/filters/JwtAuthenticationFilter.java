@@ -36,13 +36,10 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             @SuppressWarnings("unchecked")
             Map<String, String> credentials = mapper.readValue(req.getInputStream(), Map.class);
             
-            String username = credentials.get("username");
-            if (username == null) {
-                username = credentials.get("email");
-            }
+            String identifier = credentials.get("identifier");
             String password = credentials.get("password");
 
-            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, password);
+            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(identifier, password);
             return authenticationManager.authenticate(authenticationToken);
         } catch (IOException e) {
             throw new RuntimeException("Failed to parse authentication request body", e);
