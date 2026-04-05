@@ -1,7 +1,6 @@
 package com.education.education.user.user.wrapper;
 
 import com.education.education.user.user.entities.User;
-import lombok.AllArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -10,10 +9,16 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@AllArgsConstructor
 public class UserDetailsImpl implements UserDetails {
     
     public final User user;
+
+    public UserDetailsImpl(User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User cannot be null");
+        }
+        this.user = user;
+    }
     
     @Override
     public List<? extends GrantedAuthority> getAuthorities() {
