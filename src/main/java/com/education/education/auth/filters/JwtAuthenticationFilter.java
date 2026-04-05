@@ -2,6 +2,7 @@ package com.education.education.auth.filters;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.education.education.auth.deo.responses.SignUpDTOResponse;
 import com.education.education.auth.utils.AuthUtils;
 import com.education.education.user.user.entities.User;
 import com.education.education.user.user.repositories.UserRepository;
@@ -69,11 +70,25 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                 .withIssuer(req.getRequestURL().toString())
                 .sign(algorithm);
 
-        Map<String, String> idToken = new HashMap<>();
-        idToken.put("access-token", jwtAccessToken);
-        idToken.put("refresh-token", jwtRefreshToken);
+        SignUpDTOResponse.Tokens tokens = new SignUpDTOResponse.Tokens(jwtAccessToken, jwtRefreshToken);
+        
+        String roleStr = user.getRole() != null && !user.getRole().isEmpty() ? user.getRole().get(0).getRole() : null;
+
+        SignUpDTOResponse.AuthUser authUser = new SignUpDTOResponse.AuthUser(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getPhone(),
+                user.getGender() != null ? user.getGender().name() : null,
+                roleStr
+        );
+        
+        SignUpDTOResponse responseBody = new SignUpDTOResponse(tokens, authUser);
+
         res.setContentType("application/json");
-        new ObjectMapper().writeValue(res.getOutputStream(), idToken);
+        new ObjectMapper().writeValue(res.getOutputStream(), responseBody);
     }
 
     @Override
