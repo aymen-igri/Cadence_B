@@ -28,10 +28,6 @@ public class UserService {
             throw new IllegalArgumentException("user already exists, change the email");
         }
 
-        if(userRepository.findByPhone(user.getPhone()) != null){
-            throw new IllegalArgumentException("user already exists, change the phone number");
-        }
-
         userRepository.save(user);
         return userMapper.toAddUserResponseDTO(user);
     }
