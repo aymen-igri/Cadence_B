@@ -67,6 +67,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
         String jwtRefreshToken = JWT.create()
                 .withSubject(user.getUsername())
+                .withExpiresAt(new Date(System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000)) // refresh token got 30 days before it expire
                 .withIssuer(req.getRequestURL().toString())
                 .sign(algorithm);
 
