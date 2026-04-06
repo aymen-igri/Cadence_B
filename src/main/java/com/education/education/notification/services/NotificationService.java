@@ -1,11 +1,16 @@
 package com.education.education.notification.services;
 
 import java.util.List;
+import java.util.UUID;
+
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import com.education.education.notification.Notification;
 import com.education.education.notification.NotificationRepository;
 import com.education.education.notification.DTO.NotificationDTO;
+import com.education.education.user.user.entities.User;
+import com.education.education.user.user.repositories.UserRepository;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -14,10 +19,13 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final UserRepository userRepository;
 
-    public void sendNotification(String userId, String message, String type) {
+    public void sendNotification(UUID userId, String message, String type) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
         Notification notification = Notification.builder()
-                .userId(userId)
+                .userId(userId.toString())
                 .message(message)
                 .type(type)
                 .isRead(false)
@@ -27,8 +35,8 @@ public class NotificationService {
 
         NotificationDTO dto = toDTO(saved);
 
-        messagingTemplate.convertAndSend(
-            "/topic/notifications/" + userId, dto
+        messagingTemplate.convertAndSendToUser(user.getUsername(),
+            "/queue/notifications", dto
         );
     }
 
