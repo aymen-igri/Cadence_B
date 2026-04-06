@@ -25,6 +25,7 @@ public class Notification {
     private String id;
 
     private String userId;
+    private String title;
     private String message;
     private String type;
     private boolean isRead;

@@ -21,12 +21,13 @@ public class NotificationService {
     private final SimpMessagingTemplate messagingTemplate;
     private final UserRepository userRepository;
 
-    public void sendNotification(UUID userId, String message, String type) {
+    public void sendNotification(UUID userId, String message, String title, String type) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found"));
         Notification notification = Notification.builder()
                 .userId(userId.toString())
                 .message(message)
+                .title(title)
                 .type(type)
                 .isRead(false)
                 .build();
@@ -70,6 +71,7 @@ public class NotificationService {
         return NotificationDTO.builder()
                 .id(n.getId())
                 .userId(n.getUserId())
+                .title(n.getTitle())
                 .message(n.getMessage())
                 .type(n.getType())
                 .isRead(n.isRead())
