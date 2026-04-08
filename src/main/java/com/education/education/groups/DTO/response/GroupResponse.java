@@ -1,6 +1,7 @@
 package com.education.education.groups.DTO.response;
 
 import com.education.education.groups.enums.GroupPrivacy;
+import com.education.education.groups.enums.GroupRole;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -12,6 +13,7 @@ public record GroupResponse(
         GroupPrivacy privacyLevel,
         int membersCount,
         LocalDateTime createdAt,
-        String membershipId
+        String membershipId,
+        GroupRole userRole
 ) {
 }
