@@ -60,8 +60,15 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
             } catch (Exception e) {
                 SecurityContextHolder.clearContext();
-                res.setHeader("error", e.getMessage());
-                res.sendError(HttpServletResponse.SC_FORBIDDEN);
+                res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                res.setContentType("application/json");
+                
+                String errorMessage = e.getMessage();
+                String responseBody = String.format(
+                        "{\"status\": 401, \"error\": \"Unauthorized\", \"message\": \"%s\"}",
+                        errorMessage != null ? errorMessage.replace("\"", "\\\"") : "Invalid or expired token"
+                );
+                res.getWriter().write(responseBody);
                 return;
             }
         }

@@ -70,11 +70,13 @@ public class AuthService {
     }
 
     public void refreshToken(HttpServletRequest req, HttpServletResponse res) throws IOException {
-        String authToken = req.getHeader("Authorization");
-        if(authToken != null && authToken.startsWith("Bearer ")){
+        ObjectMapper mapper = new ObjectMapper();
+        @SuppressWarnings("unchecked")
+        Map<String, String> requestBody = mapper.readValue(req.getInputStream(), Map.class);
+        String jwt = requestBody.get("refreshToken");
+
+        if(jwt != null && !jwt.isEmpty()){
             try{
-                //get refresh toekn
-                String jwt = authToken.substring(7);
                 Algorithm algorithm = Algorithm.HMAC256(authUtils.getMySecret());
                 JWTVerifier jwtVerifier = JWT.require(algorithm).build();
                 DecodedJWT decodedJWT = jwtVerifier.verify(jwt);
@@ -83,22 +85,23 @@ public class AuthService {
                 // create access token
                 String jwtAccessToken = JWT.create()
                         .withSubject(user.getUsername())
-                        .withExpiresAt(new Date(System.currentTimeMillis()*10*60*1000)) // access token got 10 minutes before it expire
+                        .withExpiresAt(new Date(System.currentTimeMillis() + 10*60*1000)) // access token got 10 minutes before it expires
                         .withIssuer(req.getRequestURL().toString())
                         .withClaim("roles", user.getRole().stream().map(Role::getRole).toList())
                         .sign(algorithm);
 
                 Map<String, String> idToken = new HashMap<>();
-                idToken.put("access-token", jwtAccessToken);
-                idToken.put("refresh-token", jwt);
+                idToken.put("accessToken", jwtAccessToken);
+                idToken.put("refreshToken", jwt);
                 res.setContentType("application/json");
                 new ObjectMapper().writeValue(res.getOutputStream(), idToken);
 
             }catch(Exception e){
+                System.out.println("Refresh token error: " + e.getMessage());
                 throw new AccessDeniedException(e.getMessage());
             }
         }else{
-            throw new IllegalArgumentException("Refresh token is missing");
+            throw new IllegalArgumentException("Refresh token is missing from the request body");
         }
     }
 }
