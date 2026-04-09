@@ -177,7 +177,9 @@ public class GroupService {
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
-        verifyAdminOrOwner(group, requesterId);
+        if (!verifyAdminOrOwner(group, requesterId)) {
+            return new ArrayList<>();
+        }
 
         return group.getMembers().stream()
                 .filter(member -> member.getStatus() == GroupMemberStatus.PENDING)
@@ -190,7 +192,9 @@ public class GroupService {
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
-        verifyAdminOrOwner(group, requesterId);
+        if (!verifyAdminOrOwner(group, requesterId)) {
+            throw new AccessDeniedException("You do not have permission to approve join requests");
+        }
 
         GroupMember targetMember = group.getMembers().stream()
                 .filter(member -> member.getUser().getId().equals(targetUserId))
@@ -210,7 +214,9 @@ public class GroupService {
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
-        verifyAdminOrOwner(group, requesterId);
+        if (!verifyAdminOrOwner(group, requesterId)) {
+            throw new AccessDeniedException("You do not have permission to reject join requests");
+        }
 
         GroupMember targetMember = group.getMembers().stream()
                 .filter(member -> member.getUser().getId().equals(targetUserId))
@@ -224,14 +230,12 @@ public class GroupService {
         groupMemberRepository.delete(targetMember);
     }
 
-    private void verifyAdminOrOwner(Group group, UUID userId) {
+    private boolean verifyAdminOrOwner(Group group, UUID userId) {
         boolean isAuthorized = group.getMembers().stream()
                 .anyMatch(member -> member.getUser().getId().equals(userId) &&
                         member.getStatus() == GroupMemberStatus.APPROVED &&
                         (member.getRole() == GroupRole.OWNER || member.getRole() == GroupRole.ADMIN));
 
-        if (!isAuthorized) {
-            throw new AccessDeniedException("You do not have permission to perform this action");
-        }
+        return isAuthorized;
     }
 }
