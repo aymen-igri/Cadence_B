@@ -49,11 +49,40 @@ public class GroupController {
     }
 
     @PostMapping("/{groupId}/join")
-    public ResponseEntity<GroupMemberResponse> joinPublicGroup(
+    public ResponseEntity<GroupMemberResponse> joinGroup(
             @PathVariable UUID groupId,
             @AuthenticationPrincipal UserDetailsImpl userDetails
     ) {
-        GroupMemberResponse response = groupService.joinPublicGroup(groupId, userDetails.user.getId());
+        GroupMemberResponse response = groupService.joinGroup(groupId, userDetails.user.getId());
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{groupId}/requests")
+    public ResponseEntity<List<GroupMemberResponse>> getPendingRequests(
+            @PathVariable UUID groupId,
+            @AuthenticationPrincipal UserDetailsImpl userDetails
+    ) {
+        List<GroupMemberResponse> requests = groupService.getPendingRequests(groupId, userDetails.user.getId());
+        return ResponseEntity.ok(requests);
+    }
+
+    @PatchMapping("/{groupId}/requests/{targetUserId}/approve")
+    public ResponseEntity<Void> approveJoinRequest(
+            @PathVariable UUID groupId,
+            @PathVariable UUID targetUserId,
+            @AuthenticationPrincipal UserDetailsImpl userDetails
+    ) {
+        groupService.approveJoinRequest(groupId, targetUserId, userDetails.user.getId());
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{groupId}/requests/{targetUserId}/reject")
+    public ResponseEntity<Void> rejectJoinRequest(
+            @PathVariable UUID groupId,
+            @PathVariable UUID targetUserId,
+            @AuthenticationPrincipal UserDetailsImpl userDetails
+    ) {
+        groupService.rejectJoinRequest(groupId, targetUserId, userDetails.user.getId());
+        return ResponseEntity.noContent().build();
     }
 }

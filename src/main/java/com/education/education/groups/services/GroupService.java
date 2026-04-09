@@ -62,6 +62,7 @@ public class GroupService {
                 savedGroup.getMembers().size(),
                 savedGroup.getCreatedAt(),
                 savedGroup.getMembers().get(0).getId().toString(),
+                GroupMemberStatus.APPROVED,
                 savedGroup.getMembers().get(0).getRole()
         );
     }
@@ -76,6 +77,7 @@ public class GroupService {
 
             String membershipId = userMembership.map(member -> member.getId().toString()).orElse(null);
             GroupRole userRole = userMembership.map(GroupMember::getRole).orElse(null);
+            GroupMemberStatus membershipStatus = userMembership.map(GroupMember::getStatus).orElse(null);
 
             return new GroupResponse(
                     group.getId(),
@@ -85,6 +87,7 @@ public class GroupService {
                     group.getMembers().size(),
                     group.getCreatedAt(),
                     membershipId,
+                    membershipStatus,
                     userRole
             );
         }).collect(Collectors.toList());
@@ -116,42 +119,119 @@ public class GroupService {
     }
 
     @Transactional
-    public GroupMemberResponse joinPublicGroup(UUID groupId, UUID userId) {
+    public GroupMemberResponse joinGroup(UUID groupId, UUID userId) {
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
-        if (group.getPrivacyLevel() != GroupPrivacy.PUBLIC) {
-            throw new AccessDeniedException("You can only directly join PUBLIC groups");
-        }
+        Optional<GroupMember> existingMemberOpt = group.getMembers().stream()
+                .filter(member -> member.getUser().getId().equals(userId))
+                .findFirst();
 
-        boolean alreadyMember = group.getMembers().stream()
-                .anyMatch(member -> member.getUser().getId().equals(userId));
-
-        if (alreadyMember) {
-            throw new IllegalArgumentException("You are already a member of this group");
+        if (existingMemberOpt.isPresent()) {
+            GroupMember existingMember = existingMemberOpt.get();
+            if (existingMember.getStatus() == GroupMemberStatus.PENDING) {
+                throw new IllegalArgumentException("You already have a pending join request for this group");
+            } else if (existingMember.getStatus() == GroupMemberStatus.INVITED) {
+                // If invited, joining automatically approves the invitation
+                existingMember.setStatus(GroupMemberStatus.APPROVED);
+                GroupMember savedMember = groupMemberRepository.save(existingMember);
+                return createGroupMemberResponse(savedMember, savedMember.getUser());
+            } else {
+                throw new IllegalArgumentException("You are already a member of this group");
+            }
         }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
+        GroupMemberStatus initialStatus = (group.getPrivacyLevel() == GroupPrivacy.PUBLIC) 
+                ? GroupMemberStatus.APPROVED 
+                : GroupMemberStatus.PENDING;
+
         GroupMember newMember = GroupMember.builder()
                 .group(group)
                 .user(user)
                 .role(GroupRole.MEMBER)
-                .status(GroupMemberStatus.APPROVED)
+                .status(initialStatus)
                 .build();
 
         GroupMember savedMember = groupMemberRepository.save(newMember);
 
+        return createGroupMemberResponse(savedMember, user);
+    }
+
+    private GroupMemberResponse createGroupMemberResponse(GroupMember member, User user) {
         return new GroupMemberResponse(
-                savedMember.getId(),
+                member.getId(),
                 user.getId(),
                 user.getFirstName(),
                 user.getLastName(),
                 user.getUsername(),
-                savedMember.getRole(),
-                savedMember.getStatus(),
-                savedMember.getJoinedAt()
+                member.getRole(),
+                member.getStatus(),
+                member.getJoinedAt()
         );
+    }
+
+    public List<GroupMemberResponse> getPendingRequests(UUID groupId, UUID requesterId) {
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+        verifyAdminOrOwner(group, requesterId);
+
+        return group.getMembers().stream()
+                .filter(member -> member.getStatus() == GroupMemberStatus.PENDING)
+                .map(member -> createGroupMemberResponse(member, member.getUser()))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void approveJoinRequest(UUID groupId, UUID targetUserId, UUID requesterId) {
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+        verifyAdminOrOwner(group, requesterId);
+
+        GroupMember targetMember = group.getMembers().stream()
+                .filter(member -> member.getUser().getId().equals(targetUserId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Join request not found"));
+
+        if (targetMember.getStatus() != GroupMemberStatus.PENDING) {
+            throw new IllegalArgumentException("User is not in PENDING status");
+        }
+
+        targetMember.setStatus(GroupMemberStatus.APPROVED);
+        groupMemberRepository.save(targetMember);
+    }
+
+    @Transactional
+    public void rejectJoinRequest(UUID groupId, UUID targetUserId, UUID requesterId) {
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+        verifyAdminOrOwner(group, requesterId);
+
+        GroupMember targetMember = group.getMembers().stream()
+                .filter(member -> member.getUser().getId().equals(targetUserId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Join request not found"));
+
+        if (targetMember.getStatus() != GroupMemberStatus.PENDING) {
+            throw new IllegalArgumentException("User is not in PENDING status");
+        }
+
+        groupMemberRepository.delete(targetMember);
+    }
+
+    private void verifyAdminOrOwner(Group group, UUID userId) {
+        boolean isAuthorized = group.getMembers().stream()
+                .anyMatch(member -> member.getUser().getId().equals(userId) &&
+                        member.getStatus() == GroupMemberStatus.APPROVED &&
+                        (member.getRole() == GroupRole.OWNER || member.getRole() == GroupRole.ADMIN));
+
+        if (!isAuthorized) {
+            throw new AccessDeniedException("You do not have permission to perform this action");
+        }
     }
 }
