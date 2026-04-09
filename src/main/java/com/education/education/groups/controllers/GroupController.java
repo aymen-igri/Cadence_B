@@ -1,6 +1,7 @@
 package com.education.education.groups.controllers;
 
 import com.education.education.groups.DTO.request.CreateGroupRequest;
+import com.education.education.groups.DTO.request.UpdateGroupRequest;
 import com.education.education.groups.DTO.response.GroupMemberResponse;
 import com.education.education.groups.DTO.response.GroupResponse;
 import com.education.education.groups.services.GroupService;
@@ -83,6 +84,44 @@ public class GroupController {
             @AuthenticationPrincipal UserDetailsImpl userDetails
     ) {
         groupService.rejectJoinRequest(groupId, targetUserId, userDetails.user.getId());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{groupId}")
+    public ResponseEntity<GroupResponse> updateGroup(
+            @PathVariable UUID groupId,
+            @RequestBody UpdateGroupRequest request,
+            @AuthenticationPrincipal UserDetailsImpl userDetails
+    ) {
+        GroupResponse response = groupService.updateGroup(groupId, request, userDetails.user.getId());
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{groupId}")
+    public ResponseEntity<Void> deleteGroup(
+            @PathVariable UUID groupId,
+            @AuthenticationPrincipal UserDetailsImpl userDetails
+    ) {
+        groupService.deleteGroup(groupId, userDetails.user.getId());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{groupId}/transfer/{targetUserId}")
+    public ResponseEntity<Void> transferOwnership(
+            @PathVariable UUID groupId,
+            @PathVariable UUID targetUserId,
+            @AuthenticationPrincipal UserDetailsImpl userDetails
+    ) {
+        groupService.transferOwnership(groupId, targetUserId, userDetails.user.getId());
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{groupId}/leave")
+    public ResponseEntity<Void> leaveGroup(
+            @PathVariable UUID groupId,
+            @AuthenticationPrincipal UserDetailsImpl userDetails
+    ) {
+        groupService.leaveGroup(groupId, userDetails.user.getId());
         return ResponseEntity.noContent().build();
     }
 }
