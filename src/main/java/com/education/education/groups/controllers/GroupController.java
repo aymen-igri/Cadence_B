@@ -47,4 +47,13 @@ public class GroupController {
         List<GroupMemberResponse> members = groupService.getGroupMembers(groupId, userDetails.user.getId());
         return ResponseEntity.ok(members);
     }
+
+    @PostMapping("/{groupId}/join")
+    public ResponseEntity<GroupMemberResponse> joinPublicGroup(
+            @PathVariable UUID groupId,
+            @AuthenticationPrincipal UserDetailsImpl userDetails
+    ) {
+        GroupMemberResponse response = groupService.joinPublicGroup(groupId, userDetails.user.getId());
+        return ResponseEntity.ok(response);
+    }
 }

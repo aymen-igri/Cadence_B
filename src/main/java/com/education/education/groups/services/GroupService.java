@@ -7,6 +7,8 @@ import com.education.education.groups.entities.Group;
 import com.education.education.groups.entities.GroupMember;
 import com.education.education.groups.enums.GroupMemberStatus;
 import com.education.education.groups.enums.GroupRole;
+import com.education.education.groups.enums.GroupPrivacy;
+import com.education.education.groups.repositories.GroupMemberRepository;
 import com.education.education.groups.repositories.GroupRepository;
 import com.education.education.user.user.entities.User;
 import com.education.education.user.user.repositories.UserRepository;
@@ -27,6 +29,7 @@ public class GroupService {
 
     private final GroupRepository groupRepository;
     private final UserRepository userRepository;
+    private final GroupMemberRepository groupMemberRepository;
 
     @Transactional
     public GroupResponse createGroup(CreateGroupRequest request, UUID creatorId) {
@@ -110,5 +113,45 @@ public class GroupService {
                         member.getJoinedAt()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public GroupMemberResponse joinPublicGroup(UUID groupId, UUID userId) {
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+        if (group.getPrivacyLevel() != GroupPrivacy.PUBLIC) {
+            throw new AccessDeniedException("You can only directly join PUBLIC groups");
+        }
+
+        boolean alreadyMember = group.getMembers().stream()
+                .anyMatch(member -> member.getUser().getId().equals(userId));
+
+        if (alreadyMember) {
+            throw new IllegalArgumentException("You are already a member of this group");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        GroupMember newMember = GroupMember.builder()
+                .group(group)
+                .user(user)
+                .role(GroupRole.MEMBER)
+                .status(GroupMemberStatus.APPROVED)
+                .build();
+
+        GroupMember savedMember = groupMemberRepository.save(newMember);
+
+        return new GroupMemberResponse(
+                savedMember.getId(),
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getUsername(),
+                savedMember.getRole(),
+                savedMember.getStatus(),
+                savedMember.getJoinedAt()
+        );
     }
 }
