@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/subject")
-@PreAuthorize("hasAuthority('GENERAL_USER')")
+@PreAuthorize("hasRole('GENERAL_USER')")
 @AllArgsConstructor
 public class SubjectController {
 

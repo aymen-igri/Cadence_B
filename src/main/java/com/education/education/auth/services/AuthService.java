@@ -36,12 +36,7 @@ public class AuthService {
     private final RoleService roleService;
 
     public SignUpDTOResponse signUp(AddUserRequest request){
-        AddUserResponse addUserResponse = userService.addUser(request);
-        AddRoleToUserRequest addRoleToUserRequest = new AddRoleToUserRequest(
-                addUserResponse.username(),
-                "ROLE_GENERAL_USER"
-        );
-        roleService.addRoleToUser(addRoleToUserRequest);
+        AddUserResponse addUserResponse = userService.createUser(request, "ROLE_GENERAL_USER");
 
         Algorithm algorithm = Algorithm.HMAC256(authUtils.getMySecret());
         String jwtAccessToken = JWT.create()
