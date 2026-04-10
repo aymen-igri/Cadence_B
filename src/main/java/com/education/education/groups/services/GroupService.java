@@ -366,7 +366,7 @@ public class GroupService {
         if (currentMember.getRole() == GroupRole.OWNER) {
             throw new IllegalArgumentException("Owner cannot leave the group. Transfer ownership or delete the group first.");
         }
-
+        group.getMembers().remove(currentMember);
         groupMemberRepository.delete(currentMember);
     }
 
@@ -402,6 +402,7 @@ public class GroupService {
             throw new AccessDeniedException("Owners cannot remove other owners"); // Typically there's only one owner, but safe to check
         }
 
+        group.getMembers().remove(targetMember); 
         groupMemberRepository.delete(targetMember);
 
         notificationService.sendNotification(
