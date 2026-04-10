@@ -11,6 +11,7 @@ import com.education.education.groups.enums.GroupRole;
 import com.education.education.groups.enums.GroupPrivacy;
 import com.education.education.groups.repositories.GroupMemberRepository;
 import com.education.education.groups.repositories.GroupRepository;
+import com.education.education.notification.services.NotificationService;
 import com.education.education.user.user.entities.User;
 import com.education.education.user.user.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class GroupService {
     private final GroupRepository groupRepository;
     private final UserRepository userRepository;
     private final GroupMemberRepository groupMemberRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public GroupResponse createGroup(CreateGroupRequest request, UUID creatorId) {
@@ -208,6 +210,12 @@ public class GroupService {
 
         targetMember.setStatus(GroupMemberStatus.APPROVED);
         groupMemberRepository.save(targetMember);
+        notificationService.sendNotification(
+                targetMember.getUser().getId(),
+                "Your join request to the group: " + group.getName() + " has been approved.",
+                "Join Request Approved",
+                "GROUP_UPDATE"
+        );
     }
 
     @Transactional
@@ -229,6 +237,13 @@ public class GroupService {
         }
 
         groupMemberRepository.delete(targetMember);
+
+        notificationService.sendNotification(
+                targetMember.getUser().getId(),
+                "Your join request to the group: " + group.getName() + " has been rejected.",
+                "Join Request Rejected",
+                "GROUP_UPDATE"
+        );
     }
 
     private boolean verifyAdminOrOwner(Group group, UUID userId) {
@@ -329,6 +344,13 @@ public class GroupService {
 
         groupMemberRepository.save(currentOwner);
         groupMemberRepository.save(newOwner);
+
+        notificationService.sendNotification(
+                newOwner.getUser().getId(),
+                "You have been transferred ownership of the group: " + group.getName(),
+                "Group Ownership Transferred",
+                "GROUP_ROLE_UPDATE"
+        );
     }
 
     @Transactional
@@ -381,6 +403,13 @@ public class GroupService {
         }
 
         groupMemberRepository.delete(targetMember);
+
+        notificationService.sendNotification(
+                targetMember.getUser().getId(),
+                "You have been removed from the group: " + group.getName(),
+                "Removed from Group",
+                "GROUP_UPDATE"
+        );
     }
 
     @Transactional
@@ -416,6 +445,13 @@ public class GroupService {
 
         targetMember.setRole(GroupRole.ADMIN);
         groupMemberRepository.save(targetMember);
+
+        notificationService.sendNotification(
+                targetMember.getUser().getId(),
+                "You have been promoted to ADMIN in the group: " + group.getName(),
+                "Promoted to Admin",
+                "GROUP_ROLE_UPDATE"
+        );
     }
 
     @Transactional
@@ -451,5 +487,12 @@ public class GroupService {
 
         targetMember.setRole(GroupRole.MEMBER);
         groupMemberRepository.save(targetMember);
+
+        notificationService.sendNotification(
+                targetMember.getUser().getId(),
+                "You have been demoted to MEMBER in the group: " + group.getName(),
+                "Demoted to Member",
+                "GROUP_ROLE_UPDATE"
+        );
     }
 }
