@@ -1,4 +1,4 @@
-package com.education.education.session.WeeklySessionPlan.enums;
+package com.education.education.session.weeklySessionPlan.enums;
 
 public enum ESessionStatus {
     PENDING,

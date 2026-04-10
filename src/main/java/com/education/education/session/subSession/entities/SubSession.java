@@ -1,7 +1,8 @@
 package com.education.education.session.subSession.entities;
 
 import com.education.education.base.auditableEntity.AuditableEntity;
-import com.education.education.session.WeeklySessionPlan.entities.WeeklySessionPlan;
+import com.education.education.goal.goal.entities.Goal;
+import com.education.education.session.weeklySessionPlan.entities.WeeklySessionPlan;
 import com.education.education.session.subSession.enums.ESubSessionStatus;
 import com.education.education.subject.entities.Subject;
 import com.education.education.user.user.entities.User;
@@ -48,4 +49,8 @@ public class SubSession extends AuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "goal_id")
+    private Goal goal;
 }

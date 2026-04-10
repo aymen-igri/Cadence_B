@@ -1,7 +1,7 @@
-package com.education.education.session.WeeklySessionPlan.entities;
+package com.education.education.session.weeklySessionPlan.entities;
 
 import com.education.education.base.auditableEntity.AuditableEntity;
-import com.education.education.session.WeeklySessionPlan.enums.ESessionStatus;
+import com.education.education.session.weeklySessionPlan.enums.ESessionStatus;
 import com.education.education.user.user.entities.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

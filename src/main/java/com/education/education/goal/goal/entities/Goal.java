@@ -1,7 +1,8 @@
-package com.education.education.goal.entities;
+package com.education.education.goal.goal.entities;
 
 import com.education.education.base.auditableEntity.AuditableEntity;
 import com.education.education.subject.entities.Subject;
+import com.education.education.user.user.entities.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -33,4 +34,8 @@ public class Goal extends AuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subject_id")
     private Subject subject;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 }
