@@ -347,4 +347,109 @@ public class GroupService {
 
         groupMemberRepository.delete(currentMember);
     }
+
+    @Transactional
+    public void removeMember(UUID groupId, UUID targetUserMemberId, UUID requesterId) {
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+        GroupMember requesterMember = group.getMembers().stream()
+                .filter(member -> member.getUser().getId().equals(requesterId) && member.getStatus() == GroupMemberStatus.APPROVED)
+                .findFirst()
+                .orElseThrow(() -> new AccessDeniedException("You are not an approved member of this group"));
+
+        if (requesterMember.getId().equals(targetUserMemberId)) {
+            throw new IllegalArgumentException("You cannot remove yourself. Use the leave group functionality instead.");
+        }
+
+        GroupMember targetMember = group.getMembers().stream()
+                .filter(member -> member.getId().equals(targetUserMemberId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Target user is not a member of the group"));
+
+        if (requesterMember.getRole() == GroupRole.MEMBER) {
+            throw new AccessDeniedException("Members cannot remove other users");
+        }
+
+        if (requesterMember.getRole() == GroupRole.ADMIN && targetMember.getRole() != GroupRole.MEMBER) {
+            throw new AccessDeniedException("Admins can only remove regular members");
+        }
+
+        if (requesterMember.getRole() == GroupRole.OWNER && targetMember.getRole() == GroupRole.OWNER) {
+            throw new AccessDeniedException("Owners cannot remove other owners"); // Typically there's only one owner, but safe to check
+        }
+
+        groupMemberRepository.delete(targetMember);
+    }
+
+    @Transactional
+    public void promoteMember(UUID groupId, UUID targetUserMemberShipId, UUID requesterId) {
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+        GroupMember requesterMember = group.getMembers().stream()
+                .filter(member -> member.getUser().getId().equals(requesterId) && member.getStatus() == GroupMemberStatus.APPROVED)
+                .findFirst()
+                .orElseThrow(() -> new AccessDeniedException("You are not an approved member of this group"));
+
+        if (requesterMember.getRole() == GroupRole.MEMBER) {
+            throw new AccessDeniedException("Only owners and admins can promote members");
+        }
+
+        if (requesterMember.getId().equals(targetUserMemberShipId)) {
+            throw new IllegalArgumentException("You cannot promote yourself.");
+        }
+
+        GroupMember targetMember = group.getMembers().stream()
+                .filter(member -> member.getId().equals(targetUserMemberShipId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Target user is not a member of the group"));
+
+        if (targetMember.getRole() == GroupRole.OWNER) {
+            throw new IllegalArgumentException("Target user is already the owner");
+        }
+        
+        if (targetMember.getRole() == GroupRole.ADMIN) {
+            throw new IllegalArgumentException("Target user is already an admin");
+        }
+
+        targetMember.setRole(GroupRole.ADMIN);
+        groupMemberRepository.save(targetMember);
+    }
+
+    @Transactional
+    public void demoteAdmin(UUID groupId, UUID targetUserMemberShipId, UUID requesterId) {
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+        GroupMember requesterMember = group.getMembers().stream()
+                .filter(member -> member.getUser().getId().equals(requesterId) && member.getStatus() == GroupMemberStatus.APPROVED)
+                .findFirst()
+                .orElseThrow(() -> new AccessDeniedException("You are not an approved member of this group"));
+
+        if (requesterMember.getRole() != GroupRole.OWNER) {
+            throw new AccessDeniedException("Only the owner can demote an admin");
+        }
+
+        if (requesterMember.getId().equals(targetUserMemberShipId)) {
+            throw new IllegalArgumentException("You cannot demote yourself.");
+        }
+
+        GroupMember targetMember = group.getMembers().stream()
+                .filter(member -> member.getId().equals(targetUserMemberShipId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Target user is not a member of the group"));
+
+        if (targetMember.getRole() == GroupRole.OWNER) {
+            throw new IllegalArgumentException("Cannot demote an owner");
+        }
+
+        if (targetMember.getRole() == GroupRole.MEMBER) {
+            throw new IllegalArgumentException("Target user is already a member");
+        }
+
+        targetMember.setRole(GroupRole.MEMBER);
+        groupMemberRepository.save(targetMember);
+    }
 }

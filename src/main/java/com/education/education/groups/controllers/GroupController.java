@@ -124,4 +124,34 @@ public class GroupController {
         groupService.leaveGroup(groupId, userDetails.user.getId());
         return ResponseEntity.noContent().build();
     }
+
+    @DeleteMapping("/{groupId}/members/{targetUserMemberId}")
+    public ResponseEntity<Void> removeMember(
+            @PathVariable UUID groupId,
+            @PathVariable UUID targetUserMemberId,
+            @AuthenticationPrincipal UserDetailsImpl userDetails
+    ) {
+        groupService.removeMember(groupId, targetUserMemberId, userDetails.user.getId());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{groupId}/members/{targetUserMemberShipId}/promote")
+    public ResponseEntity<Void> promoteMember(
+            @PathVariable UUID groupId,
+            @PathVariable UUID targetUserMemberShipId,
+            @AuthenticationPrincipal UserDetailsImpl userDetails
+    ) {
+        groupService.promoteMember(groupId, targetUserMemberShipId, userDetails.user.getId());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{groupId}/members/{targetUserMemberShipId}/demote")
+    public ResponseEntity<Void> demoteAdmin(
+            @PathVariable UUID groupId,
+            @PathVariable UUID targetUserMemberShipId,
+            @AuthenticationPrincipal UserDetailsImpl userDetails
+    ) {
+        groupService.demoteAdmin(groupId, targetUserMemberShipId, userDetails.user.getId());
+        return ResponseEntity.noContent().build();
+    }
 }
