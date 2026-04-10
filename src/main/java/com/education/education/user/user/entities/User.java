@@ -1,6 +1,7 @@
 package com.education.education.user.user.entities;
 
 import com.education.education.base.auditableEntity.AuditableEntity;
+import com.education.education.subject.entities.Subject;
 import com.education.education.user.role.entities.Role;
 import com.education.education.user.user.enums.EGender;
 import com.education.education.user.user.enums.EStatus;
@@ -48,6 +49,13 @@ public class User extends AuditableEntity {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EStatus status;
+
+    @Column
+    private String profilePic;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "users_roles",
@@ -56,10 +64,7 @@ public class User extends AuditableEntity {
     )
     private List<Role> role;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private EStatus status;
+    @OneToMany(mappedBy = "createdBy", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Subject> createdSubjects;
 
-    @Column
-    private String profilePic;
 }
