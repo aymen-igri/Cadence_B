@@ -12,7 +12,6 @@ public record CreateSubjectReq(
         @NotNull(message = "Subject priority is required")
         EPriority priority,
 
-
         String description
 ) {
 }
