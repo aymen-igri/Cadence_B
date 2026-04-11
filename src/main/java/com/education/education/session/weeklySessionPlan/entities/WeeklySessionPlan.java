@@ -1,5 +1,6 @@
 package com.education.education.session.weeklySessionPlan.entities;
 
+import com.education.education.availability.availabilityPlan.entities.AvailabilityPlan;
 import com.education.education.base.auditableEntity.AuditableEntity;
 import com.education.education.session.weeklySessionPlan.enums.ESessionStatus;
 import com.education.education.user.user.entities.User;
@@ -35,4 +36,8 @@ public class WeeklySessionPlan extends AuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "availability_plan_id")
+    private AvailabilityPlan availabilityPlan;
 }
