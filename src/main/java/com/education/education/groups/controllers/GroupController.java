@@ -32,6 +32,15 @@ public class GroupController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/{groupId}")
+    public ResponseEntity<GroupResponse> getGroupById(
+            @PathVariable UUID groupId,
+            @AuthenticationPrincipal UserDetailsImpl userDetails
+    ) {
+        GroupResponse response = groupService.getGroupById(groupId, userDetails.user.getId());
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/create")
     public ResponseEntity<GroupResponse> createGroup(
             @Valid @RequestBody CreateGroupRequest request,

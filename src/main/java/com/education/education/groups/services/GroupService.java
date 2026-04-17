@@ -97,6 +97,33 @@ public class GroupService {
         }).collect(Collectors.toList());
     }
 
+    public GroupResponse getGroupById(UUID groupId, UUID currentUserId) {
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+        Optional<GroupMember> userMembership = group.getMembers().stream()
+                .filter(member -> member.getUser().getId().equals(currentUserId))
+                .findFirst();
+
+        if (userMembership.isEmpty()) {
+            throw new AccessDeniedException("You are not a member of this group");
+        }
+
+        String membershipId = userMembership.get().getId().toString();
+        GroupRole userRole = userMembership.get().getRole();
+
+        return new GroupResponse(
+                group.getId(),
+                group.getName(),
+                group.getDescription(),
+                group.getPrivacyLevel(),
+                group.getMembers().size(),
+                group.getCreatedAt(),
+                membershipId,
+                userRole
+        );
+    }
+
     public List<GroupMemberResponse> getGroupMembers(UUID groupId, UUID currentUserId) {
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found"));
