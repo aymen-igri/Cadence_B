@@ -1,11 +1,9 @@
 package com.education.education.session.services;
 
 import com.education.education.availability.availabilityPlan.entities.AvailabilityPlan;
-import com.education.education.availability.availabilityPlan.repositories.AvailabilityPlanRepository;
 import com.education.education.availability.availabilitySlot.entities.AvailabilitySlot;
 import com.education.education.availability.availabilitySlot.repositories.AvailabilitySlotRepository;
 import com.education.education.goal.goal.entities.Goal;
-import com.education.education.goal.goal.repositories.GoalRepository;
 import com.education.education.session.dto.middle.EngineResult;
 import com.education.education.session.dto.middle.GenerationData;
 import com.education.education.session.dto.request.GenerationSessionReq;
@@ -13,6 +11,9 @@ import com.education.education.session.dto.response.CreateSessionRes;
 import com.education.education.session.dto.response.GenerationSessionRes;
 import com.education.education.session.mappers.GenerationMapper;
 import com.education.education.session.subSession.dto.response.CreateSubSessionRes;
+import com.education.education.session.subSession.entities.SubSession;
+import com.education.education.session.subSession.enums.ESubSessionStatus;
+import com.education.education.session.subSession.repositories.SubSessionRepository;
 import com.education.education.session.weeklySessionPlan.dto.response.CreateWeeklySessionRes;
 import com.education.education.session.weeklySessionPlan.entities.WeeklySessionPlan;
 import com.education.education.session.weeklySessionPlan.enums.EGenerationType;
@@ -28,8 +29,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -39,11 +42,10 @@ import java.util.UUID;
 public class GenerationService {
 
     private final UserRepository userRepository;
-    private final GoalRepository goalRepository;
     private final SubjectRepository subjectRepository;
-    private final AvailabilityPlanRepository availabilityPlanRepository;
     private final AvailabilitySlotRepository availabilitySlotRepository;
     private final WeeklySessionPlanRepository weeklySessionPlanRepository;
+    private final SubSessionRepository subSessionRepository;
     private final GenerationMapper generationMapper;
 
     public GenerationSessionRes generateSession(
@@ -119,6 +121,81 @@ public class GenerationService {
             List<AvailabilitySlot> availabilitySlots,
             WeeklySessionPlan plan
     ){
-        return null;
+        // sorting goals by priority then by duration
+        goals.sort(Comparator.comparing((Goal g) -> g.getSubject().getPriority())
+                .thenComparing(Goal::getTargetHoursPerWeek,Comparator.reverseOrder()));
+
+        // sorting availability slots by date
+        availabilitySlots.sort(Comparator.comparing(AvailabilitySlot::getDayOfWeek)
+                .thenComparing(AvailabilitySlot::getStartTime));
+
+        List<SubSession> generatedSubSessions = new ArrayList<>();
+        long totalPenaltyPoints = 0;
+
+        int currentGoalIdx = 0;
+        int currentASlotIdx = 0;
+
+        long currentGoalMinutes = (currentGoalIdx < goals.size()) ? (long)(goals.get(currentGoalIdx).getTargetHoursPerWeek() * 60) : 0;
+        long currentASlotMinutes = (currentASlotIdx < availabilitySlots.size()) ? Duration.between(
+                availabilitySlots.get(currentASlotIdx).getStartTime(),
+                availabilitySlots.get(currentASlotIdx).getEndTime()
+        ).toMinutes() : 0;
+
+        while(currentGoalIdx < goals.size() && currentASlotIdx < availabilitySlots.size()){
+            Goal goal = goals.get(currentGoalIdx);
+            AvailabilitySlot aSlot = availabilitySlots.get(currentASlotIdx);
+
+            long fillAmount = Math.min(currentGoalMinutes, currentASlotMinutes);
+
+            if (fillAmount > 0){
+                SubSession newSSision = new SubSession();
+                newSSision.setWeeklySessionPlan(plan);
+                newSSision.setDayOfWeek(aSlot.getDayOfWeek());
+                newSSision.setSubject(goal.getSubject());
+                newSSision.setGoal(goal);
+                newSSision.setSubSessionStatus(ESubSessionStatus.PENDING);
+
+                long totalSlotDuration = Duration.between(aSlot.getStartTime(), aSlot.getEndTime()).toMinutes();
+                long offset = totalSlotDuration - currentASlotMinutes;
+
+                newSSision.setStartTime(aSlot.getStartTime().plusMinutes(offset));
+                newSSision.setEndTime(newSSision.getStartTime().plusMinutes(fillAmount));
+
+                generatedSubSessions.add(subSessionRepository.save(newSSision));
+
+                currentGoalMinutes -= fillAmount;
+                currentASlotMinutes -= fillAmount;
+            }
+
+            if (currentGoalMinutes <= 0){
+                currentGoalIdx++;
+                if (currentGoalIdx < goals.size()) {
+                    currentGoalMinutes = (long)(goals.get(currentGoalIdx).getTargetHoursPerWeek() * 60);
+                }
+            }
+
+            if (currentASlotMinutes <= 0){
+                currentASlotIdx++;
+                if (currentASlotIdx < availabilitySlots.size()){
+                    currentASlotMinutes = Duration.between(
+                            availabilitySlots.get(currentASlotIdx).getStartTime(),
+                            availabilitySlots.get(currentASlotIdx).getEndTime()
+                    ).toMinutes();
+                }
+            }
+        }
+
+        while (currentGoalIdx < goals.size()){
+            totalPenaltyPoints += currentGoalMinutes;
+            currentGoalIdx++;
+            if (currentGoalIdx < goals.size()) {
+                currentGoalMinutes = (long)(goals.get(currentGoalIdx).getTargetHoursPerWeek() * 60);
+            }
+        }
+
+        return new EngineResult(
+                generatedSubSessions,
+                totalPenaltyPoints
+        );
     }
 }
