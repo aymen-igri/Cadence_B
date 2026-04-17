@@ -1,6 +1,5 @@
 package com.education.education.groups.DTO.response;
 
-import com.education.education.groups.enums.GroupMemberStatus;
 import com.education.education.groups.enums.GroupPrivacy;
 import com.education.education.groups.enums.GroupRole;
 
@@ -15,7 +14,6 @@ public record GroupResponse(
         int membersCount,
         LocalDateTime createdAt,
         String membershipId,
-        GroupMemberStatus membershipStatus,
         GroupRole userRole
 ) {
 }

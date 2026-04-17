@@ -4,7 +4,6 @@ import com.education.education.groups.DTO.request.SendGroupMessageRequest;
 import com.education.education.groups.DTO.response.GroupMessageResponse;
 import com.education.education.groups.entities.Group;
 import com.education.education.groups.entities.GroupMessage;
-import com.education.education.groups.enums.GroupMemberStatus;
 import com.education.education.groups.repositories.GroupMessageRepository;
 import com.education.education.groups.repositories.GroupRepository;
 import com.education.education.user.user.entities.User;
@@ -38,8 +37,7 @@ public class GroupMessageService {
 
         // Verify sender is an active member of this group
         boolean isApprovedMember = group.getMembers().stream()
-                .anyMatch(member -> member.getUser().getId().equals(senderId) 
-                        && member.getStatus() == GroupMemberStatus.APPROVED);
+                .anyMatch(member -> member.getUser().getId().equals(senderId));
 
         if (!isApprovedMember) {
             throw new AccessDeniedException("You are not an approved member of this group");
@@ -74,8 +72,7 @@ public class GroupMessageService {
                 .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
         boolean isMember = group.getMembers().stream()
-                .anyMatch(member -> member.getUser().getId().equals(userId)
-                        && member.getStatus() == GroupMemberStatus.APPROVED);
+                .anyMatch(member -> member.getUser().getId().equals(userId));
 
         if (!isMember) {
             throw new AccessDeniedException("You cannot view the chat history of a group you do not belong to");

@@ -1,17 +1,18 @@
 package com.education.education.groups.DTO.response;
 
-import com.education.education.groups.enums.GroupRole;
+import com.education.education.groups.enums.JoinRequestStatus;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-public record GroupMemberResponse(
-        UUID membershipId,
+public record JoinRequestResponse(
+        UUID id,
+        UUID groupId,
         UUID userId,
         String firstName,
         String lastName,
         String username,
-        GroupRole role,
-        LocalDateTime joinedAt
+        JoinRequestStatus status,
+        LocalDateTime requestedAt
 ) {
 }

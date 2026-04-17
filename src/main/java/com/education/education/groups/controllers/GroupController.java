@@ -4,6 +4,7 @@ import com.education.education.groups.DTO.request.CreateGroupRequest;
 import com.education.education.groups.DTO.request.UpdateGroupRequest;
 import com.education.education.groups.DTO.response.GroupMemberResponse;
 import com.education.education.groups.DTO.response.GroupResponse;
+import com.education.education.groups.DTO.response.JoinRequestResponse;
 import com.education.education.groups.services.GroupService;
 import com.education.education.user.user.wrapper.UserDetailsImpl;
 import jakarta.validation.Valid;
@@ -50,31 +51,31 @@ public class GroupController {
     }
 
     @PostMapping("/{groupId}/join")
-    public ResponseEntity<GroupMemberResponse> joinGroup(
+    public ResponseEntity<Object> joinGroup(
             @PathVariable UUID groupId,
             @AuthenticationPrincipal UserDetailsImpl userDetails
     ) {
-        GroupMemberResponse response = groupService.joinGroup(groupId, userDetails.user.getId());
+        Object response = groupService.joinGroup(groupId, userDetails.user.getId());
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{groupId}/requests")
-    public ResponseEntity<List<GroupMemberResponse>> getPendingRequests(
+    public ResponseEntity<List<JoinRequestResponse>> getPendingRequests(
             @PathVariable UUID groupId,
             @AuthenticationPrincipal UserDetailsImpl userDetails
     ) {
-        List<GroupMemberResponse> requests = groupService.getPendingRequests(groupId, userDetails.user.getId());
+        List<JoinRequestResponse> requests = groupService.getPendingRequests(groupId, userDetails.user.getId());
         return ResponseEntity.ok(requests);
     }
 
     @PatchMapping("/{groupId}/requests/{targetUserId}/approve")
-    public ResponseEntity<Void> approveJoinRequest(
+    public ResponseEntity<GroupMemberResponse> approveJoinRequest(
             @PathVariable UUID groupId,
             @PathVariable UUID targetUserId,
             @AuthenticationPrincipal UserDetailsImpl userDetails
     ) {
-        groupService.approveJoinRequest(groupId, targetUserId, userDetails.user.getId());
-        return ResponseEntity.noContent().build();
+        GroupMemberResponse response = groupService.approveJoinRequest(groupId, targetUserId, userDetails.user.getId());
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{groupId}/requests/{targetUserId}/reject")

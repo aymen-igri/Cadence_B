@@ -6,11 +6,14 @@ import com.education.education.groups.DTO.response.GroupMemberResponse;
 import com.education.education.groups.DTO.response.GroupResponse;
 import com.education.education.groups.entities.Group;
 import com.education.education.groups.entities.GroupMember;
-import com.education.education.groups.enums.GroupMemberStatus;
 import com.education.education.groups.enums.GroupRole;
 import com.education.education.groups.enums.GroupPrivacy;
 import com.education.education.groups.repositories.GroupMemberRepository;
 import com.education.education.groups.repositories.GroupRepository;
+import com.education.education.groups.repositories.GroupJoinRequestRepository;
+import com.education.education.groups.entities.GroupJoinRequest;
+import com.education.education.groups.enums.JoinRequestStatus;
+import com.education.education.groups.DTO.response.JoinRequestResponse;
 import com.education.education.notification.services.NotificationService;
 import com.education.education.user.user.entities.User;
 import com.education.education.user.user.repositories.UserRepository;
@@ -32,6 +35,7 @@ public class GroupService {
     private final GroupRepository groupRepository;
     private final UserRepository userRepository;
     private final GroupMemberRepository groupMemberRepository;
+    private final GroupJoinRequestRepository groupJoinRequestRepository;
     private final NotificationService notificationService;
 
     @Transactional
@@ -50,7 +54,6 @@ public class GroupService {
                 .group(group)
                 .user(creator)
                 .role(GroupRole.OWNER)
-                .status(GroupMemberStatus.APPROVED)
                 .build();
 
         group.getMembers().add(ownerMember);
@@ -65,7 +68,6 @@ public class GroupService {
                 savedGroup.getMembers().size(),
                 savedGroup.getCreatedAt(),
                 savedGroup.getMembers().get(0).getId().toString(),
-                GroupMemberStatus.APPROVED,
                 savedGroup.getMembers().get(0).getRole()
         );
     }
@@ -80,7 +82,6 @@ public class GroupService {
 
             String membershipId = userMembership.map(member -> member.getId().toString()).orElse(null);
             GroupRole userRole = userMembership.map(GroupMember::getRole).orElse(null);
-            GroupMemberStatus membershipStatus = userMembership.map(GroupMember::getStatus).orElse(null);
 
             return new GroupResponse(
                     group.getId(),
@@ -90,7 +91,6 @@ public class GroupService {
                     group.getMembers().size(),
                     group.getCreatedAt(),
                     membershipId,
-                    membershipStatus,
                     userRole
             );
         }).collect(Collectors.toList());
@@ -104,7 +104,7 @@ public class GroupService {
                 .anyMatch(member -> member.getUser().getId().equals(currentUserId));
 
         if (!isMember) {
-            throw new AccessDeniedException("You are not a member of this group");
+            throw new AccessDeniedException("You are not an approved member of this group");
         }
 
         return group.getMembers().stream()
@@ -115,14 +115,13 @@ public class GroupService {
                         member.getUser().getLastName(),
                         member.getUser().getUsername(),
                         member.getRole(),
-                        member.getStatus(),
                         member.getJoinedAt()
                 ))
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public GroupMemberResponse joinGroup(UUID groupId, UUID userId) {
+    public Object joinGroup(UUID groupId, UUID userId) {
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
@@ -131,36 +130,44 @@ public class GroupService {
                 .findFirst();
 
         if (existingMemberOpt.isPresent()) {
-            GroupMember existingMember = existingMemberOpt.get();
-            if (existingMember.getStatus() == GroupMemberStatus.PENDING) {
-                throw new IllegalArgumentException("You already have a pending join request for this group");
-            } else if (existingMember.getStatus() == GroupMemberStatus.INVITED) {
-                // If invited, joining automatically approves the invitation
-                existingMember.setStatus(GroupMemberStatus.APPROVED);
-                GroupMember savedMember = groupMemberRepository.save(existingMember);
-                return createGroupMemberResponse(savedMember, savedMember.getUser());
-            } else {
                 throw new IllegalArgumentException("You are already a member of this group");
-            }
+        }
+        
+        Optional<GroupJoinRequest> existingRequest = groupJoinRequestRepository.findByGroupIdAndUserId(groupId, userId);
+        if (existingRequest.isPresent() && existingRequest.get().getStatus() == JoinRequestStatus.PENDING) {
+            throw new IllegalArgumentException("You already have a pending join request for this group");
         }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        GroupMemberStatus initialStatus = (group.getPrivacyLevel() == GroupPrivacy.PUBLIC) 
-                ? GroupMemberStatus.APPROVED 
-                : GroupMemberStatus.PENDING;
+        if (group.getPrivacyLevel() == GroupPrivacy.PUBLIC) {
+            GroupMember newMember = GroupMember.builder()
+                    .group(group)
+                    .user(user)
+                    .role(GroupRole.MEMBER)
+                    .build();
 
-        GroupMember newMember = GroupMember.builder()
-                .group(group)
-                .user(user)
-                .role(GroupRole.MEMBER)
-                .status(initialStatus)
-                .build();
-
-        GroupMember savedMember = groupMemberRepository.save(newMember);
-
-        return createGroupMemberResponse(savedMember, user);
+            GroupMember savedMember = groupMemberRepository.save(newMember);
+            return createGroupMemberResponse(savedMember, user);
+        } else {
+            GroupJoinRequest joinRequest = GroupJoinRequest.builder()
+                    .group(group)
+                    .user(user)
+                    .status(JoinRequestStatus.PENDING)
+                    .build();
+            GroupJoinRequest savedRequest = groupJoinRequestRepository.save(joinRequest);
+            return new JoinRequestResponse(
+                    savedRequest.getId(),
+                    group.getId(),
+                    user.getId(),
+                    user.getFirstName(),
+                    user.getLastName(),
+                    user.getUsername(),
+                    savedRequest.getStatus(),
+                    savedRequest.getCreatedAt()
+            );
+        }
     }
 
     private GroupMemberResponse createGroupMemberResponse(GroupMember member, User user) {
@@ -171,12 +178,11 @@ public class GroupService {
                 user.getLastName(),
                 user.getUsername(),
                 member.getRole(),
-                member.getStatus(),
                 member.getJoinedAt()
         );
     }
 
-    public List<GroupMemberResponse> getPendingRequests(UUID groupId, UUID requesterId) {
+    public List<JoinRequestResponse> getPendingRequests(UUID groupId, UUID requesterId) {
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
@@ -184,14 +190,24 @@ public class GroupService {
             return new ArrayList<>();
         }
 
-        return group.getMembers().stream()
-                .filter(member -> member.getStatus() == GroupMemberStatus.PENDING)
-                .map(member -> createGroupMemberResponse(member, member.getUser()))
+        List<GroupJoinRequest> requests = groupJoinRequestRepository.findByGroupIdAndStatus(groupId, JoinRequestStatus.PENDING);
+        
+        return requests.stream()
+                .map(req -> new JoinRequestResponse(
+                        req.getId(),
+                        req.getGroup().getId(),
+                        req.getUser().getId(),
+                        req.getUser().getFirstName(),
+                        req.getUser().getLastName(),
+                        req.getUser().getUsername(),
+                        req.getStatus(),
+                        req.getCreatedAt()
+                ))
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public void approveJoinRequest(UUID groupId, UUID targetUserId, UUID requesterId) {
+    public GroupMemberResponse approveJoinRequest(UUID groupId, UUID targetUserId, UUID requesterId) {
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
@@ -199,23 +215,29 @@ public class GroupService {
             throw new AccessDeniedException("You do not have permission to approve join requests");
         }
 
-        GroupMember targetMember = group.getMembers().stream()
-                .filter(member -> member.getUser().getId().equals(targetUserId))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Join request not found"));
+        GroupJoinRequest targetRequest = groupJoinRequestRepository.findByGroupIdAndUserId(groupId, targetUserId)
+                .filter(req -> req.getStatus() == JoinRequestStatus.PENDING)
+                .orElseThrow(() -> new IllegalArgumentException("Pending join request not found"));
 
-        if (targetMember.getStatus() != GroupMemberStatus.PENDING) {
-            throw new IllegalArgumentException("User is not in PENDING status");
-        }
-
-        targetMember.setStatus(GroupMemberStatus.APPROVED);
-        groupMemberRepository.save(targetMember);
+        targetRequest.setStatus(JoinRequestStatus.APPROVED);
+        groupJoinRequestRepository.save(targetRequest);
+        
+        GroupMember newMember = GroupMember.builder()
+                .group(group)
+                .user(targetRequest.getUser())
+                .role(GroupRole.MEMBER)
+                .build();
+                
+        GroupMember savedMember = groupMemberRepository.save(newMember);
+        
         notificationService.sendNotification(
-                targetMember.getUser().getId(),
+                targetRequest.getUser().getId(),
                 "Your join request to the group: " + group.getName() + " has been approved.",
                 "Join Request Approved",
                 "GROUP_UPDATE"
         );
+        
+        return createGroupMemberResponse(savedMember, savedMember.getUser());
     }
 
     @Transactional
@@ -227,19 +249,15 @@ public class GroupService {
             throw new AccessDeniedException("You do not have permission to reject join requests");
         }
 
-        GroupMember targetMember = group.getMembers().stream()
-                .filter(member -> member.getUser().getId().equals(targetUserId))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Join request not found"));
+        GroupJoinRequest targetRequest = groupJoinRequestRepository.findByGroupIdAndUserId(groupId, targetUserId)
+                .filter(req -> req.getStatus() == JoinRequestStatus.PENDING)
+                .orElseThrow(() -> new IllegalArgumentException("Pending join request not found"));
 
-        if (targetMember.getStatus() != GroupMemberStatus.PENDING) {
-            throw new IllegalArgumentException("User is not in PENDING status");
-        }
-
-        groupMemberRepository.delete(targetMember);
+        targetRequest.setStatus(JoinRequestStatus.REJECTED);
+        groupJoinRequestRepository.save(targetRequest);
 
         notificationService.sendNotification(
-                targetMember.getUser().getId(),
+                targetRequest.getUser().getId(),
                 "Your join request to the group: " + group.getName() + " has been rejected.",
                 "Join Request Rejected",
                 "GROUP_UPDATE"
@@ -249,7 +267,6 @@ public class GroupService {
     private boolean verifyAdminOrOwner(Group group, UUID userId) {
         boolean isAuthorized = group.getMembers().stream()
                 .anyMatch(member -> member.getUser().getId().equals(userId) &&
-                        member.getStatus() == GroupMemberStatus.APPROVED &&
                         (member.getRole() == GroupRole.OWNER || member.getRole() == GroupRole.ADMIN));
 
         return isAuthorized;
@@ -282,7 +299,6 @@ public class GroupService {
 
         String membershipId = userMembership.map(member -> member.getId().toString()).orElse(null);
         GroupRole userRole = userMembership.map(GroupMember::getRole).orElse(null);
-        GroupMemberStatus membershipStatus = userMembership.map(GroupMember::getStatus).orElse(null);
 
         return new GroupResponse(
                 savedGroup.getId(),
@@ -292,7 +308,6 @@ public class GroupService {
                 savedGroup.getMembers().size(),
                 savedGroup.getCreatedAt(),
                 membershipId,
-                membershipStatus,
                 userRole
         );
     }
@@ -304,7 +319,6 @@ public class GroupService {
 
         boolean isOwner = group.getMembers().stream()
                 .anyMatch(member -> member.getUser().getId().equals(requesterId) &&
-                        member.getStatus() == GroupMemberStatus.APPROVED &&
                         member.getRole() == GroupRole.OWNER);
 
         if (!isOwner) {
@@ -325,7 +339,6 @@ public class GroupService {
 
         GroupMember currentOwner = group.getMembers().stream()
                 .filter(member -> member.getUser().getId().equals(requesterId) &&
-                        member.getStatus() == GroupMemberStatus.APPROVED &&
                         member.getRole() == GroupRole.OWNER)
                 .findFirst()
                 .orElseThrow(() -> new AccessDeniedException("You do not have permission to transfer ownership. Only the owner can do this."));
@@ -335,9 +348,6 @@ public class GroupService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Target user is not a member of the group"));
 
-        if (newOwner.getStatus() != GroupMemberStatus.APPROVED) {
-            throw new IllegalArgumentException("Target user must be an approved member to become owner");
-        }
 
         currentOwner.setRole(GroupRole.MEMBER);
         newOwner.setRole(GroupRole.OWNER);
@@ -377,7 +387,7 @@ public class GroupService {
                 .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
         GroupMember requesterMember = group.getMembers().stream()
-                .filter(member -> member.getUser().getId().equals(requesterId) && member.getStatus() == GroupMemberStatus.APPROVED)
+                .filter(member -> member.getUser().getId().equals(requesterId))
                 .findFirst()
                 .orElseThrow(() -> new AccessDeniedException("You are not an approved member of this group"));
 
@@ -419,7 +429,7 @@ public class GroupService {
                 .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
         GroupMember requesterMember = group.getMembers().stream()
-                .filter(member -> member.getUser().getId().equals(requesterId) && member.getStatus() == GroupMemberStatus.APPROVED)
+                .filter(member -> member.getUser().getId().equals(requesterId))
                 .findFirst()
                 .orElseThrow(() -> new AccessDeniedException("You are not an approved member of this group"));
 
@@ -461,7 +471,7 @@ public class GroupService {
                 .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
         GroupMember requesterMember = group.getMembers().stream()
-                .filter(member -> member.getUser().getId().equals(requesterId) && member.getStatus() == GroupMemberStatus.APPROVED)
+                .filter(member -> member.getUser().getId().equals(requesterId) )
                 .findFirst()
                 .orElseThrow(() -> new AccessDeniedException("You are not an approved member of this group"));
 

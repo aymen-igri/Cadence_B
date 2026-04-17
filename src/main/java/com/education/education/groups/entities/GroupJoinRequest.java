@@ -1,6 +1,6 @@
 package com.education.education.groups.entities;
 
-import com.education.education.groups.enums.GroupRole;
+import com.education.education.groups.enums.JoinRequestStatus;
 import com.education.education.user.user.entities.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -9,13 +9,13 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "study_group_members")
+@Table(name = "group_join_requests")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class GroupMember {
+public class GroupJoinRequest {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -31,9 +31,9 @@ public class GroupMember {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private GroupRole role;
+    private JoinRequestStatus status;
 
-    @Column(name = "joined_at")
-    private LocalDateTime joinedAt;
-
+    @Builder.Default
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
 }

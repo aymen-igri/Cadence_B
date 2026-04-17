@@ -1,7 +1,7 @@
 package com.education.education.groups.enums;
 
-public enum GroupMemberStatus {
+public enum JoinRequestStatus {
     PENDING,
     APPROVED,
-    INVITED
+    REJECTED
 }
