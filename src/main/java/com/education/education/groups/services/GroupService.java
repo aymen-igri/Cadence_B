@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.access.AccessDeniedException;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -121,9 +122,43 @@ public class GroupService {
     }
 
     @Transactional
-    public Object joinGroup(UUID groupId, UUID userId) {
+    public GroupMemberResponse joinPublicGroup(UUID groupId, UUID userId) {
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+        if (group.getPrivacyLevel() != GroupPrivacy.PUBLIC) {
+            throw new IllegalArgumentException("This endpoint is only for public groups");
+        }
+
+        Optional<GroupMember> existingMemberOpt = group.getMembers().stream()
+                .filter(member -> member.getUser().getId().equals(userId))
+                .findFirst();
+
+        if (existingMemberOpt.isPresent()) {
+            throw new IllegalArgumentException("You are already a member of this group");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        GroupMember newMember = GroupMember.builder()
+                .group(group)
+                .user(user)
+                .role(GroupRole.MEMBER)
+                .build();
+
+        GroupMember savedMember = groupMemberRepository.save(newMember);
+        return createGroupMemberResponse(savedMember, user);
+    }
+
+    @Transactional
+    public JoinRequestResponse sendJoinRequest(UUID groupId, UUID userId) {
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+        if (group.getPrivacyLevel() != GroupPrivacy.PRIVATE) {
+            throw new IllegalArgumentException("This endpoint is only for private groups");
+        }
 
         Optional<GroupMember> existingMemberOpt = group.getMembers().stream()
                 .filter(member -> member.getUser().getId().equals(userId))
@@ -141,33 +176,23 @@ public class GroupService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        if (group.getPrivacyLevel() == GroupPrivacy.PUBLIC) {
-            GroupMember newMember = GroupMember.builder()
-                    .group(group)
-                    .user(user)
-                    .role(GroupRole.MEMBER)
-                    .build();
-
-            GroupMember savedMember = groupMemberRepository.save(newMember);
-            return createGroupMemberResponse(savedMember, user);
-        } else {
-            GroupJoinRequest joinRequest = GroupJoinRequest.builder()
-                    .group(group)
-                    .user(user)
-                    .status(JoinRequestStatus.PENDING)
-                    .build();
-            GroupJoinRequest savedRequest = groupJoinRequestRepository.save(joinRequest);
-            return new JoinRequestResponse(
-                    savedRequest.getId(),
-                    group.getId(),
-                    user.getId(),
-                    user.getFirstName(),
-                    user.getLastName(),
-                    user.getUsername(),
-                    savedRequest.getStatus(),
-                    savedRequest.getCreatedAt()
-            );
-        }
+        GroupJoinRequest joinRequest = GroupJoinRequest.builder()
+                .group(group)
+                .user(user)
+                .status(JoinRequestStatus.PENDING)
+                .build();
+        GroupJoinRequest savedRequest = groupJoinRequestRepository.save(joinRequest);
+        
+        return new JoinRequestResponse(
+                savedRequest.getId(),
+                group.getId(),
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getUsername(),
+                savedRequest.getStatus(),
+                savedRequest.getCreatedAt()
+        );
     }
 
     private GroupMemberResponse createGroupMemberResponse(GroupMember member, User user) {
@@ -219,16 +244,17 @@ public class GroupService {
                 .filter(req -> req.getStatus() == JoinRequestStatus.PENDING)
                 .orElseThrow(() -> new IllegalArgumentException("Pending join request not found"));
 
-        targetRequest.setStatus(JoinRequestStatus.APPROVED);
-        groupJoinRequestRepository.save(targetRequest);
+        groupJoinRequestRepository.delete(targetRequest);
         
         GroupMember newMember = GroupMember.builder()
                 .group(group)
                 .user(targetRequest.getUser())
                 .role(GroupRole.MEMBER)
+                .joinedAt(LocalDateTime.now())
                 .build();
                 
         GroupMember savedMember = groupMemberRepository.save(newMember);
+
         
         notificationService.sendNotification(
                 targetRequest.getUser().getId(),
@@ -253,8 +279,7 @@ public class GroupService {
                 .filter(req -> req.getStatus() == JoinRequestStatus.PENDING)
                 .orElseThrow(() -> new IllegalArgumentException("Pending join request not found"));
 
-        targetRequest.setStatus(JoinRequestStatus.REJECTED);
-        groupJoinRequestRepository.save(targetRequest);
+        groupJoinRequestRepository.delete(targetRequest);
 
         notificationService.sendNotification(
                 targetRequest.getUser().getId(),
@@ -414,6 +439,7 @@ public class GroupService {
 
         group.getMembers().remove(targetMember); 
         groupMemberRepository.delete(targetMember);
+
 
         notificationService.sendNotification(
                 targetMember.getUser().getId(),

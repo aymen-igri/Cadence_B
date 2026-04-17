@@ -51,11 +51,20 @@ public class GroupController {
     }
 
     @PostMapping("/{groupId}/join")
-    public ResponseEntity<Object> joinGroup(
+    public ResponseEntity<GroupMemberResponse> joinPublicGroup(
             @PathVariable UUID groupId,
             @AuthenticationPrincipal UserDetailsImpl userDetails
     ) {
-        Object response = groupService.joinGroup(groupId, userDetails.user.getId());
+        GroupMemberResponse response = groupService.joinPublicGroup(groupId, userDetails.user.getId());
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{groupId}/join-request")
+    public ResponseEntity<JoinRequestResponse> sendJoinRequest(
+            @PathVariable UUID groupId,
+            @AuthenticationPrincipal UserDetailsImpl userDetails
+    ) {
+        JoinRequestResponse response = groupService.sendJoinRequest(groupId, userDetails.user.getId());
         return ResponseEntity.ok(response);
     }
 
