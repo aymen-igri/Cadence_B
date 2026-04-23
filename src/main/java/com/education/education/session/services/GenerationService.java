@@ -81,7 +81,8 @@ public class GenerationService {
         EngineResult engineResult = FFD_Alg(
                 goals,
                 availabilitySlots,
-                newWeeklySessionPlan
+                newWeeklySessionPlan,
+                req.usePriority()
         );
 
         savedPlan.setPenaltyPoints(engineResult.penaltyPoints());
@@ -119,11 +120,20 @@ public class GenerationService {
     public EngineResult FFD_Alg(
             List<Goal> goals,
             List<AvailabilitySlot> availabilitySlots,
-            WeeklySessionPlan plan
+            WeeklySessionPlan plan,
+            boolean usePriority
     ){
-        // sorting goals by priority then by duration
-        goals.sort(Comparator.comparing((Goal g) -> g.getSubject().getPriority())
-                .thenComparing(Goal::getTargetHoursPerWeek,Comparator.reverseOrder()));
+
+        // sorting section based on the user choise
+        if (usePriority) {
+            // sorting goals by priority then by duration
+            goals.sort(Comparator.comparing((Goal g) -> g.getSubject().getPriority())
+                    .thenComparing(Goal::getTargetHoursPerWeek, Comparator.reverseOrder()));
+        }else {
+            // sorting goals by duration
+            goals.sort(Comparator.comparing(Goal::getTargetHoursPerWeek).reversed());
+        }
+
 
         // sorting availability slots by date
         availabilitySlots.sort(Comparator.comparing(AvailabilitySlot::getDayOfWeek)

@@ -1,12 +1,21 @@
 package com.education.education.session.dto.request;
 
+import jakarta.validation.constraints.NotNull;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
 public record GenerationSessionReq(
+        @NotNull(message = "Goal list is required")
         List<UUID> goalsList,
+
+        @NotNull(message = "Availability plan is required")
         UUID availabilityPlanID,
-        LocalDateTime weekStartDate
+
+        @NotNull(message= "Start date is required")
+        LocalDateTime weekStartDate,
+
+        boolean usePriority
 ) {
 }
