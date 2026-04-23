@@ -2,6 +2,7 @@ package com.education.education.session.weeklySessionPlan.entities;
 
 import com.education.education.availability.availabilityPlan.entities.AvailabilityPlan;
 import com.education.education.base.auditableEntity.AuditableEntity;
+import com.education.education.session.weeklySessionPlan.enums.EGenerationAlgoType;
 import com.education.education.session.weeklySessionPlan.enums.EGenerationType;
 import com.education.education.session.weeklySessionPlan.enums.EPlanStatus;
 import com.education.education.session.weeklySessionPlan.enums.ESessionStatus;
@@ -45,6 +46,10 @@ public class WeeklySessionPlan extends AuditableEntity {
 
     @Column(nullable = false)
     private Long penaltyPoints = 0L;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EGenerationAlgoType generationAlgoType = EGenerationAlgoType.NONE;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")

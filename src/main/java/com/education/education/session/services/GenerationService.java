@@ -16,6 +16,7 @@ import com.education.education.session.subSession.enums.ESubSessionStatus;
 import com.education.education.session.subSession.repositories.SubSessionRepository;
 import com.education.education.session.weeklySessionPlan.dto.response.CreateWeeklySessionRes;
 import com.education.education.session.weeklySessionPlan.entities.WeeklySessionPlan;
+import com.education.education.session.weeklySessionPlan.enums.EGenerationAlgoType;
 import com.education.education.session.weeklySessionPlan.enums.EGenerationType;
 import com.education.education.session.weeklySessionPlan.enums.EPlanStatus;
 import com.education.education.session.weeklySessionPlan.enums.ESessionStatus;
@@ -73,6 +74,12 @@ public class GenerationService {
         newWeeklySessionPlan.setPlanStatus(EPlanStatus.DRAFT);
         newWeeklySessionPlan.setGenerationType(EGenerationType.AUTO_GENERATED);
         newWeeklySessionPlan.setAvailabilityPlan(availabilityPlan);
+
+        if (req.usePriority()){
+            newWeeklySessionPlan.setGenerationAlgoType(EGenerationAlgoType.PRIORITY_FIRST);
+        } else {
+            newWeeklySessionPlan.setGenerationAlgoType(EGenerationAlgoType.DENSITY_FIRST);
+        }
 
         WeeklySessionPlan savedPlan = weeklySessionPlanRepository.save(newWeeklySessionPlan);
 
