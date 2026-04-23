@@ -1,6 +1,6 @@
 package com.education.education.goal.task.entities;
 
-import com.education.education.goal.goal.entities.Goal;
+import com.education.education.goal.entities.Goal;
 import com.education.education.goal.task.enums.ETask;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

@@ -1,4 +1,4 @@
-package com.education.education.goal.goal.entities;
+package com.education.education.goal.entities;
 
 import com.education.education.base.auditableEntity.AuditableEntity;
 import com.education.education.subject.entities.Subject;
@@ -30,6 +30,9 @@ public class Goal extends AuditableEntity {
     private float targetHoursPerWeek;
 
     private float progress;
+
+    @Column(name = "deadline")
+    private java.time.LocalDate deadline;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subject_id")

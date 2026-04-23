@@ -1,7 +1,7 @@
 package com.education.education.subject.entities;
 
 import com.education.education.base.auditableEntity.AuditableEntity;
-import com.education.education.goal.goal.entities.Goal;
+import com.education.education.goal.entities.Goal;
 import com.education.education.subject.enums.EPriority;
 import com.education.education.user.user.entities.User;
 import jakarta.persistence.*;

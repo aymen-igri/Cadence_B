@@ -1,6 +1,6 @@
 package com.education.education.goal.task.services;
 
-import com.education.education.goal.goal.entities.Goal;
+import com.education.education.goal.entities.Goal;
 import com.education.education.goal.task.dto.request.CreateTaskReq;
 import com.education.education.goal.task.dto.response.CreateTaskRes;
 import com.education.education.goal.task.entities.Task;

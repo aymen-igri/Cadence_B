@@ -3,7 +3,7 @@ package com.education.education.session.services;
 import com.education.education.availability.availabilityPlan.entities.AvailabilityPlan;
 import com.education.education.availability.availabilitySlot.entities.AvailabilitySlot;
 import com.education.education.availability.availabilitySlot.repositories.AvailabilitySlotRepository;
-import com.education.education.goal.goal.entities.Goal;
+import com.education.education.goal.entities.Goal;
 import com.education.education.session.dto.middle.EngineResult;
 import com.education.education.session.dto.middle.GenerationData;
 import com.education.education.session.dto.request.GenerationSessionReq;

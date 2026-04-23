@@ -2,8 +2,8 @@ package com.education.education.session.mappers;
 
 import com.education.education.availability.availabilityPlan.entities.AvailabilityPlan;
 import com.education.education.availability.availabilityPlan.repositories.AvailabilityPlanRepository;
-import com.education.education.goal.goal.entities.Goal;
-import com.education.education.goal.goal.repositories.GoalRepository;
+import com.education.education.goal.entities.Goal;
+import com.education.education.goal.repositories.GoalRepository;
 import com.education.education.session.dto.middle.GenerationData;
 import com.education.education.session.dto.request.GenerationSessionReq;
 import com.education.education.session.dto.response.CreateSessionRes;

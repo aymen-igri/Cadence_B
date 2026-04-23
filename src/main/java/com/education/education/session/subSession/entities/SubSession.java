@@ -1,7 +1,7 @@
 package com.education.education.session.subSession.entities;
 
 import com.education.education.base.auditableEntity.AuditableEntity;
-import com.education.education.goal.goal.entities.Goal;
+import com.education.education.goal.entities.Goal;
 import com.education.education.session.weeklySessionPlan.entities.WeeklySessionPlan;
 import com.education.education.session.subSession.enums.ESubSessionStatus;
 import com.education.education.subject.entities.Subject;

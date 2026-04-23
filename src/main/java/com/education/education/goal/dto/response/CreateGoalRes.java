@@ -1,8 +1,4 @@
-package com.education.education.goal.goal.dto.response;
-
-import com.education.education.subject.entities.Subject;
-import com.education.education.user.user.entities.User;
-
+package com.education.education.goal.dto.response;
 import java.util.UUID;
 
 public record CreateGoalRes(
@@ -10,6 +6,7 @@ public record CreateGoalRes(
         String title,
         float targetHoursPerWeek,
         float progress,
+        java.time.LocalDate deadline,
         UUID subjectId,
         String subjectName
 ) {
