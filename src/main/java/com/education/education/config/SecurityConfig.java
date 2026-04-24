@@ -37,7 +37,7 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
 
     @Bean
-public CorsConfigurationSource corsConfigurationSource() {  // ← correct type and name
+public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
     configuration.setAllowedOriginPatterns(List.of("*"));
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
@@ -64,6 +64,8 @@ public CorsConfigurationSource corsConfigurationSource() {  // ← correct type 
                            auth -> auth
                                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                                    .requestMatchers("/auth/**").permitAll()
+                                   .requestMatchers("/roles/**").permitAll() // for now 3la 9bl testing wsafi
+                                   .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                                 .anyRequest().authenticated() // zdt hadi bach nchof wach authorization verification khdama f subject creation wla la, haydha la bghiti tkamal khadma
                 );
         http.sessionManagement(

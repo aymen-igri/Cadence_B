@@ -3,6 +3,7 @@ package com.education.education.auth.controllers;
 import com.education.education.auth.deo.responses.SignUpDTOResponse;
 import com.education.education.auth.services.AuthService;
 import com.education.education.user.user.dto.request.AddUserRequest;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -19,6 +20,7 @@ import java.io.IOException;
 @RestController
 @RequestMapping("/auth")
 @AllArgsConstructor
+@Tag(name = "Generation Engine", description = "Endpoints for generating study plans") // Groups endpoints
 public class AuthController {
 
     private final AuthService authService;
