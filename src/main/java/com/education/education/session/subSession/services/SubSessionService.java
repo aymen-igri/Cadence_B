@@ -6,9 +6,7 @@ import com.education.education.session.subSession.entities.SubSession;
 import com.education.education.session.subSession.mappers.SubSessionMapper;
 import com.education.education.session.subSession.repositories.SubSessionRepository;
 import com.education.education.session.weeklySessionPlan.entities.WeeklySessionPlan;
-import com.education.education.subject.mappers.SubjectMapper;
 import lombok.AllArgsConstructor;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

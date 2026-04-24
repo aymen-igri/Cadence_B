@@ -5,15 +5,12 @@ import com.education.education.goal.entities.Goal;
 import com.education.education.session.weeklySessionPlan.entities.WeeklySessionPlan;
 import com.education.education.session.subSession.enums.ESubSessionStatus;
 import com.education.education.subject.entities.Subject;
-import com.education.education.user.user.entities.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
 import java.time.DayOfWeek;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.UUID;
 

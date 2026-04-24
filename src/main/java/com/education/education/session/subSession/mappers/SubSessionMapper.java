@@ -3,8 +3,6 @@ package com.education.education.session.subSession.mappers;
 import com.education.education.session.subSession.dto.request.CreateSubSessionReq;
 import com.education.education.session.subSession.dto.response.CreateSubSessionRes;
 import com.education.education.session.subSession.entities.SubSession;
-import com.education.education.session.subSession.enums.ESubSessionStatus;
-import com.education.education.session.subSession.repositories.SubSessionRepository;
 import com.education.education.subject.repositories.SubjectRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
