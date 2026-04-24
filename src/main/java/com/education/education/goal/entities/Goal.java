@@ -1,6 +1,7 @@
 package com.education.education.goal.entities;
 
 import com.education.education.base.auditableEntity.AuditableEntity;
+import com.education.education.goal.task.entities.Task;
 import com.education.education.subject.entities.Subject;
 import com.education.education.user.user.entities.User;
 import jakarta.persistence.*;
@@ -9,6 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -41,4 +43,7 @@ public class Goal extends AuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+
+    @OneToMany(mappedBy = "goal", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Task> tasks;
 }

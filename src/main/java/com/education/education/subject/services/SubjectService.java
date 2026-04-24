@@ -1,6 +1,7 @@
 package com.education.education.subject.services;
 
 import com.education.education.subject.dto.request.CreateSubjectReq;
+import com.education.education.subject.dto.request.UpdateSubjectReq;
 import com.education.education.subject.dto.response.CreateSubjectRes;
 import com.education.education.subject.entities.Subject;
 import com.education.education.subject.mappers.SubjectMapper;
@@ -8,11 +9,13 @@ import com.education.education.subject.repositories.SubjectRepository;
 import com.education.education.user.user.entities.User;
 import com.education.education.user.user.repositories.UserRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -62,5 +65,51 @@ public class SubjectService {
                         subject.getCreatedAt()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    public CreateSubjectRes updateSubject(
+            UUID subjectId,
+            UpdateSubjectReq subjectReq,
+            UserDetails userDetails
+    ){
+        User user = userRepository.findByUsername(userDetails.getUsername());
+        if (user == null) {
+            throw new IllegalArgumentException("User not found");
+        }
+
+        Subject subject = subjectRepository.findById(subjectId)
+                .orElseThrow(() -> new IllegalArgumentException("Subject not found"));
+
+        if (!subject.getCreatedBy().getId().equals(user.getId())) {
+            throw new AccessDeniedException("You are not allowed to update this subject");
+        }
+
+        subjectMapper.updateSubjectFromReq(subjectReq, subject);
+
+        Subject savedSubject = subjectRepository.save(subject);
+
+        return new CreateSubjectRes(
+                savedSubject.getId(),
+                savedSubject.getName(),
+                savedSubject.getPriority(),
+                savedSubject.getDescription(),
+                savedSubject.getCreatedAt()
+        );
+    }
+
+    public void deleteSubject(UUID subjectId, UserDetails userDetails){
+        User user = userRepository.findByUsername(userDetails.getUsername());
+        if (user == null) {
+            throw new IllegalArgumentException("User not found");
+        }
+
+        Subject subject = subjectRepository.findById(subjectId)
+                .orElseThrow(() -> new IllegalArgumentException("Subject not found"));
+
+        if (!subject.getCreatedBy().getId().equals(user.getId())) {
+            throw new AccessDeniedException("You are not allowed to delete this subject");
+        }
+
+        subjectRepository.delete(subject);
     }
 }

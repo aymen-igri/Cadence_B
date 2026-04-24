@@ -1,13 +1,12 @@
 package com.education.education.subject.mappers;
 
 import com.education.education.subject.dto.request.CreateSubjectReq;
+import com.education.education.subject.dto.request.UpdateSubjectReq;
 import com.education.education.subject.dto.response.CreateSubjectRes;
 import com.education.education.subject.entities.Subject;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 @Component
-@Transactional
 public class SubjectMapper {
 
     public CreateSubjectRes subjectToSubjectRes(Subject subject){
@@ -27,5 +26,17 @@ public class SubjectMapper {
         subject.setDescription(subjectReq.description());
 
         return subject;
+    }
+
+    public void updateSubjectFromReq(UpdateSubjectReq subjectReq, Subject subject) {
+        if (subjectReq.name() != null && !subjectReq.name().isBlank()) {
+            subject.setName(subjectReq.name());
+        }
+        if (subjectReq.priority() != null) {
+            subject.setPriority(subjectReq.priority());
+        }
+        if (subjectReq.description() != null) {
+            subject.setDescription(subjectReq.description());
+        }
     }
 }

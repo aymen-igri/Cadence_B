@@ -1,6 +1,7 @@
 package com.education.education.goal.mappers;
 
 import com.education.education.goal.dto.request.CreateGoalReq;
+import com.education.education.goal.dto.request.UpdateGoalReq;
 import com.education.education.goal.dto.response.CreateGoalRes;
 import com.education.education.goal.entities.Goal;
 import com.education.education.subject.entities.Subject;
@@ -18,6 +19,21 @@ public class GoalMapper {
         goal.setSubject(subject);
 
         return goal;
+    }
+
+    public void updateGoalFromReq(UpdateGoalReq request, Goal goal) {
+        if (request.title() != null && !request.title().isBlank()) {
+            goal.setTitle(request.title());
+        }
+        if (request.targetHoursPerWeek() != null) {
+            goal.setTargetHoursPerWeek(request.targetHoursPerWeek());
+        }
+        if (request.progress() != null) {
+            goal.setProgress(request.progress());
+        }
+        if (request.deadline() != null) {
+            goal.setDeadline(request.deadline());
+        }
     }
 
     public CreateGoalRes toCreateGoalRes(Goal goal){

@@ -1,6 +1,7 @@
 package com.education.education.goal.services;
 
 import com.education.education.goal.dto.request.CreateGoalReq;
+import com.education.education.goal.dto.request.UpdateGoalReq;
 import com.education.education.goal.dto.response.CreateGoalRes;
 import com.education.education.goal.entities.Goal;
 import com.education.education.goal.mappers.GoalMapper;
@@ -77,5 +78,48 @@ public class GoalService {
          return goals.stream()
                 .map(goalMapper::toCreateGoalRes)
                 .toList();
+    }
+
+    public CreateGoalRes updateGoal(
+            UUID goalId,
+            UpdateGoalReq request,
+            UserDetails mainUser
+    ){
+        User user = userRepository.findByUsername(mainUser.getUsername());
+        if (user == null) {
+            throw new IllegalArgumentException("User not found");
+        }
+
+        Goal goal = goalRepository.findById(goalId)
+                .orElseThrow(() -> new IllegalArgumentException("Goal not found"));
+
+        if (!goal.getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException("You are not allowed to update this goal");
+        }
+
+        if (request.deadline() != null && request.deadline().isBefore(java.time.LocalDate.now())) {
+            throw new IllegalArgumentException("Deadline cannot be in the past");
+        }
+
+        goalMapper.updateGoalFromReq(request, goal);
+        Goal savedGoal = goalRepository.save(goal);
+
+        return goalMapper.toCreateGoalRes(savedGoal);
+    }
+
+    public void deleteGoal(UUID goalId, UserDetails mainUser) {
+        User user = userRepository.findByUsername(mainUser.getUsername());
+        if (user == null) {
+            throw new IllegalArgumentException("User not found");
+        }
+
+        Goal goal = goalRepository.findById(goalId)
+                .orElseThrow(() -> new IllegalArgumentException("Goal not found"));
+
+        if (!goal.getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException("You are not allowed to delete this goal");
+        }
+
+        goalRepository.delete(goal);
     }
 }

@@ -2,6 +2,7 @@ package com.education.education.goal.controllers;
 
 
 import com.education.education.goal.dto.request.CreateGoalReq;
+import com.education.education.goal.dto.request.UpdateGoalReq;
 import com.education.education.goal.dto.response.CreateGoalRes;
 import com.education.education.goal.services.GoalService;
 import jakarta.validation.Valid;
@@ -13,6 +14,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,5 +46,22 @@ public class GoalController {
     ){
         return ResponseEntity.ok(goalService.getAllGoals(userDetails, subjectId));
     }
-    
+
+    @PatchMapping("/update/{goalId}")
+    public ResponseEntity<CreateGoalRes> updateGoal(
+            @PathVariable UUID goalId,
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @RequestBody UpdateGoalReq request
+    ){
+        return ResponseEntity.ok(goalService.updateGoal(goalId, request, userDetails));
+    }
+
+    @DeleteMapping("/delete/{goalId}")
+    public ResponseEntity<Void> deleteGoal(
+            @PathVariable UUID goalId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ){
+        goalService.deleteGoal(goalId, userDetails);
+        return ResponseEntity.noContent().build();
+    }
 }
