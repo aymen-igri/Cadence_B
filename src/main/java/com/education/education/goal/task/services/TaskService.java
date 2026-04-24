@@ -3,6 +3,7 @@ package com.education.education.goal.task.services;
 import com.education.education.goal.entities.Goal;
 import com.education.education.goal.repositories.GoalRepository;
 import com.education.education.goal.task.dto.request.CreateTaskReq;
+import com.education.education.goal.task.dto.request.UpdateTaskReq;
 import com.education.education.goal.task.dto.response.CreateTaskRes;
 import com.education.education.goal.task.entities.Task;
 import com.education.education.goal.task.mappers.TaskMapper;
@@ -51,6 +52,29 @@ public class TaskService {
         return taskMapper.toCreateTaskRes(savedTask);
     }
 
+    public CreateTaskRes updateTask(
+            UUID taskId,
+            UpdateTaskReq request,
+            UserDetails mainUser
+    ){
+        User user = userRepository.findByUsername(mainUser.getUsername());
+        if (user == null) {
+            throw new IllegalArgumentException("User not found");
+        }
+
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found"));
+
+        if (!task.getGoal().getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException("You are not allowed to update this task");
+        }
+
+        taskMapper.updateTaskFromReq(request, task);
+        Task savedTask = taskRepository.save(task);
+
+        return taskMapper.toCreateTaskRes(savedTask);
+    }
+
     public List<CreateTaskRes> getAllTasks(
             UserDetails mainUser,
             UUID goalId
@@ -72,5 +96,22 @@ public class TaskService {
         return tasks.stream()
                 .map(taskMapper::toCreateTaskRes)
                 .toList();
+    }
+
+    public void deleteTask(UUID taskId, UserDetails mainUser) {
+        User user = userRepository.findByUsername(mainUser.getUsername());
+        if (user == null) {
+            throw new IllegalArgumentException("User not found");
+        }
+
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found"));
+
+        Goal goal = task.getGoal();
+        if (!goal.getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException("You are not allowed to delete this task");
+        }
+
+        taskRepository.delete(task);
     }
 }

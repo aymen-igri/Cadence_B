@@ -1,6 +1,7 @@
 package com.education.education.goal.task.controllers;
 
 import com.education.education.goal.task.dto.request.CreateTaskReq;
+import com.education.education.goal.task.dto.request.UpdateTaskReq;
 import com.education.education.goal.task.dto.response.CreateTaskRes;
 import com.education.education.goal.task.services.TaskService;
 import jakarta.validation.Valid;
@@ -37,5 +38,23 @@ public class TaskController {
             @PathVariable UUID goalId
     ){
         return ResponseEntity.ok(taskService.getAllTasks(mainUser, goalId));
+    }
+
+    @PatchMapping("/update/{taskId}")
+    public ResponseEntity<CreateTaskRes> updateTask(
+            @PathVariable UUID taskId,
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @RequestBody UpdateTaskReq request
+    ){
+        return ResponseEntity.ok(taskService.updateTask(taskId, request, userDetails));
+    }
+
+    @DeleteMapping("/delete/{taskId}")
+    public ResponseEntity<Void> deleteTask(
+            @PathVariable UUID taskId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ){
+        taskService.deleteTask(taskId, userDetails);
+        return ResponseEntity.noContent().build();
     }
 }
