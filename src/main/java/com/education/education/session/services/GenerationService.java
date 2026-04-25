@@ -114,6 +114,7 @@ public class GenerationService {
                         new CreateWeeklySessionRes(
                                 savedPlan.getId(),
                                 savedPlan.getStartTime(),
+                                savedPlan.getTitle(),
                                 savedPlan.getSessionStatus()
                         ),
                         subSessionRes

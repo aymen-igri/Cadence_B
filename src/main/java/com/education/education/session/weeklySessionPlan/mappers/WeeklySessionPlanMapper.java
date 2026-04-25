@@ -14,6 +14,7 @@ public class WeeklySessionPlanMapper {
 
     public WeeklySessionPlan toWeeklySessionPlan(CreateWeeklySessionReq request) {
         WeeklySessionPlan weeklySessionPlan = new WeeklySessionPlan();
+        weeklySessionPlan.setTitle(request.title());
         weeklySessionPlan.setStartTime(request.startTime());
         weeklySessionPlan.setSessionStatus(request.status());
 
@@ -24,6 +25,7 @@ public class WeeklySessionPlanMapper {
         return new CreateWeeklySessionRes(
                 weeklySessionPlan.getId(),
                 weeklySessionPlan.getStartTime(),
+                weeklySessionPlan.getTitle(),
                 weeklySessionPlan.getSessionStatus()
         );
     }

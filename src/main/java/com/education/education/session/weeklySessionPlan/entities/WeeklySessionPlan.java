@@ -30,6 +30,9 @@ public class WeeklySessionPlan extends AuditableEntity {
     private UUID id;
 
     @Column(nullable = false)
+    private String title;
+
+    @Column(nullable = false)
     private LocalDateTime startTime;
 
     @Enumerated(EnumType.STRING)
@@ -42,7 +45,7 @@ public class WeeklySessionPlan extends AuditableEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private EPlanStatus planStatus;
+    private EPlanStatus planStatus = EPlanStatus.DRAFT;
 
     @Column(nullable = false)
     private Long penaltyPoints = 0L;

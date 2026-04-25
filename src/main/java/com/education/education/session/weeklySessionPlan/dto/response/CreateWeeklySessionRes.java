@@ -8,6 +8,7 @@ import java.util.UUID;
 public record CreateWeeklySessionRes(
         UUID id,
         LocalDateTime startTime,
+        String title,
         ESessionStatus sessionStatus
 ) {
 }
