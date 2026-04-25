@@ -2,6 +2,7 @@ package com.education.education.session.controllers;
 
 import com.education.education.session.dto.request.CreateSessionReq;
 import com.education.education.session.dto.request.GenerationSessionReq;
+import com.education.education.session.dto.request.UpdateSessionReq;
 import com.education.education.session.dto.response.CreateSessionRes;
 import com.education.education.session.dto.response.GenerationSessionRes;
 import com.education.education.session.services.GenerationService;
@@ -14,6 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -53,6 +55,15 @@ public class SessionController {
             @AuthenticationPrincipal UserDetails userDetails
     ){
         return ResponseEntity.ok(weeklySessionPlanService.getAllWeeklySessionPlans(userDetails));
+    }
+
+    @PatchMapping("/update/{sessionId}")
+    public ResponseEntity<CreateSessionRes> updateWeeklySessionPlan(
+            @PathVariable UUID sessionId,
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @RequestBody UpdateSessionReq request
+    ) {
+        return ResponseEntity.ok(weeklySessionPlanService.updateWeeklySessionPlan(sessionId, request, userDetails));
     }
 
     @DeleteMapping("/delete/{sessionId}")
