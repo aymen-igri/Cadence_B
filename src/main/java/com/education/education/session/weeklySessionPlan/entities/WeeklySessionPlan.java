@@ -6,6 +6,7 @@ import com.education.education.session.weeklySessionPlan.enums.EGenerationAlgoTy
 import com.education.education.session.weeklySessionPlan.enums.EGenerationType;
 import com.education.education.session.weeklySessionPlan.enums.EPlanStatus;
 import com.education.education.session.weeklySessionPlan.enums.ESessionStatus;
+import com.education.education.session.subSession.entities.SubSession;
 import com.education.education.user.user.entities.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -14,6 +15,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -61,4 +63,7 @@ public class WeeklySessionPlan extends AuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "availability_plan_id")
     private AvailabilityPlan availabilityPlan;
+
+    @OneToMany(mappedBy = "weeklySessionPlan", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SubSession> subSessions;
 }

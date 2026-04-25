@@ -10,6 +10,8 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @Transactional
 @AllArgsConstructor
@@ -26,5 +28,11 @@ public class SubSessionService {
         newSubSession.setWeeklySessionPlan(weeklySessionPlan);
 
         return subSessionMapper.toCreateSubSessionRes(subSessionRepository.save(newSubSession));
+    }
+
+    public List<CreateSubSessionRes> getSubSessionsByPlan(WeeklySessionPlan weeklySessionPlan) {
+        return subSessionRepository.findByWeeklySessionPlanOrderByStartTimeAsc(weeklySessionPlan).stream()
+                .map(subSessionMapper::toCreateSubSessionRes)
+                .toList();
     }
 }

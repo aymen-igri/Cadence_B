@@ -8,6 +8,7 @@ import com.education.education.session.weeklySessionPlan.dto.request.CreateWeekl
 import com.education.education.session.weeklySessionPlan.entities.WeeklySessionPlan;
 import com.education.education.session.weeklySessionPlan.mappers.WeeklySessionPlanMapper;
 import com.education.education.session.weeklySessionPlan.repositories.WeeklySessionPlanRepository;
+import com.education.education.user.user.entities.User;
 import com.education.education.user.user.repositories.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -46,5 +47,19 @@ public class WeeklySessionPlanService {
                 weeklySessionPlanMapper.toCreateWeeklySessionRes(savedSession),
                 createdSubSessions
         );
+    }
+
+    public List<CreateSessionRes> getAllWeeklySessionPlans(UserDetails mainUser) {
+        User user = userRepository.findByUsername(mainUser.getUsername());
+        if (user == null) {
+            throw new IllegalArgumentException("User not found");
+        }
+
+        List<WeeklySessionPlan> plans = weeklySessionPlanRepository.findByUserOrderByStartTimeDesc(user);
+
+        return plans.stream().map(plan -> new CreateSessionRes(
+                weeklySessionPlanMapper.toCreateWeeklySessionRes(plan),
+                subSessionPlanService.getSubSessionsByPlan(plan)
+        )).toList();
     }
 }
