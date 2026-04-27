@@ -34,6 +34,32 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }
 
+    // Handle WebSocket authentication failures (HTTP 401 Unauthorized)
+    @ExceptionHandler(WebSocketAuthenticationException.class)
+    public ResponseEntity<Map<String, Object>> handleWebSocketAuthenticationException(WebSocketAuthenticationException ex) {
+        log.warn("WebSocket authentication failed: {}", ex.getMessage());
+        Map<String, Object> error = new HashMap<>();
+        error.put("timestamp", LocalDateTime.now());
+        error.put("status", HttpStatus.UNAUTHORIZED.value());
+        error.put("error", "Unauthorized");
+        error.put("message", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
+
+    // Handle WebSocket authorization failures (HTTP 403 Forbidden)
+    @ExceptionHandler(WebSocketAuthorizationException.class)
+    public ResponseEntity<Map<String, Object>> handleWebSocketAuthorizationException(WebSocketAuthorizationException ex) {
+        log.warn("WebSocket authorization failed: {}", ex.getMessage());
+        Map<String, Object> error = new HashMap<>();
+        error.put("timestamp", LocalDateTime.now());
+        error.put("status", HttpStatus.FORBIDDEN.value());
+        error.put("error", "Forbidden");
+        error.put("message", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
+
     // Handle illegal arguments (validation errors)
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
