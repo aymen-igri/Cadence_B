@@ -4,6 +4,7 @@ import com.education.education.groups.DTO.request.SendGroupMessageRequest;
 import com.education.education.groups.DTO.response.GroupMessageResponse;
 import com.education.education.groups.services.GroupMessageService;
 import com.education.education.user.user.wrapper.UserDetailsImpl;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/groups/{groupId}/messages")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 public class GroupMessageController {
 
     private final GroupMessageService groupMessageService;

@@ -5,6 +5,7 @@ import com.education.education.goal.dto.request.CreateGoalReq;
 import com.education.education.goal.dto.request.UpdateGoalReq;
 import com.education.education.goal.dto.response.CreateGoalRes;
 import com.education.education.goal.services.GoalService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import java.util.List;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 @RequestMapping("/goal")
 @PreAuthorize("hasRole('GENERAL_USER')")
 @AllArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 public class GoalController {
 
     private final GoalService goalService;

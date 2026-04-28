@@ -7,6 +7,7 @@ import com.education.education.groups.DTO.response.GroupResponse;
 import com.education.education.groups.DTO.response.JoinRequestResponse;
 import com.education.education.groups.services.GroupService;
 import com.education.education.user.user.wrapper.UserDetailsImpl;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/groups")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 public class GroupController {
 
     private final GroupService groupService;

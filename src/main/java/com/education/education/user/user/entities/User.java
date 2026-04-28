@@ -49,6 +49,11 @@ public class User extends AuditableEntity {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean isTotpEnabled = false;
+
+    private String totpSecret;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EStatus status;
@@ -66,5 +71,8 @@ public class User extends AuditableEntity {
 
     @OneToMany(mappedBy = "createdBy", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Subject> createdSubjects;
+
+    @OneToMany(mappedBy = "updatedBy", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Subject> updatedSubjects;
 
 }

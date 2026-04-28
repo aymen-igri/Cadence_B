@@ -20,7 +20,7 @@ import java.io.IOException;
 @RestController
 @RequestMapping("/auth")
 @AllArgsConstructor
-@Tag(name = "Generation Engine", description = "Endpoints for generating study plans") // Groups endpoints
+@Tag(name = "Generation Engine", description = "Endpoints for generating study plans")
 public class AuthController {
 
     private final AuthService authService;

@@ -7,6 +7,7 @@ import com.education.education.session.dto.response.CreateSessionRes;
 import com.education.education.session.dto.response.GenerationSessionRes;
 import com.education.education.session.services.GenerationService;
 import com.education.education.session.weeklySessionPlan.services.WeeklySessionPlanService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,7 @@ import java.util.UUID;
 @RequestMapping("/session")
 @PreAuthorize("hasRole('GENERAL_USER')")
 @AllArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 public class SessionController {
 
     private final WeeklySessionPlanService weeklySessionPlanService;

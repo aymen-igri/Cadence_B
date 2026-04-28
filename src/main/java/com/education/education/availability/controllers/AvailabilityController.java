@@ -3,6 +3,7 @@ package com.education.education.availability.controllers;
 import com.education.education.availability.availabilityPlan.services.AvailabilityPlanService;
 import com.education.education.availability.dto.request.CreateAvailabilityRequest;
 import com.education.education.availability.dto.response.CreateAvailabilityRes;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,6 +19,7 @@ import jakarta.validation.Valid;
 @RequestMapping("/availability")
 @PreAuthorize("hasRole('GENERAL_USER')")
 @AllArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 public class AvailabilityController {
     
     private final AvailabilityPlanService availabilityPlanService;

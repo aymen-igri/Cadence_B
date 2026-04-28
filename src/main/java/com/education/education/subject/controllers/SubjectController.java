@@ -4,6 +4,7 @@ import com.education.education.subject.dto.request.CreateSubjectReq;
 import com.education.education.subject.dto.request.UpdateSubjectReq;
 import com.education.education.subject.dto.response.CreateSubjectRes;
 import com.education.education.subject.services.SubjectService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,7 @@ import java.util.UUID;
 @RequestMapping("/subject")
 @PreAuthorize("hasRole('GENERAL_USER')")
 @AllArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 public class SubjectController {
 
     private final SubjectService subjectService;

@@ -20,7 +20,6 @@ public class OpenApiConfig {
                         .title("Education API")
                         .version("1.0")
                         .description("API for managing educational resources and user interactions."))
-                .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
                 .components(new Components()
                         .addSecuritySchemes(securitySchemeName,
                                 new SecurityScheme()

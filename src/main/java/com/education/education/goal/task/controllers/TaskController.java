@@ -4,6 +4,7 @@ import com.education.education.goal.task.dto.request.CreateTaskReq;
 import com.education.education.goal.task.dto.request.UpdateTaskReq;
 import com.education.education.goal.task.dto.response.CreateTaskRes;
 import com.education.education.goal.task.services.TaskService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import java.util.UUID;
 @RequestMapping("/task")
 @PreAuthorize("hasRole('GENERAL_USER')")
 @AllArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 public class TaskController {
     
     private final TaskService taskService;
