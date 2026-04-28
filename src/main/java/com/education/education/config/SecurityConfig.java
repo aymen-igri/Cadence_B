@@ -66,6 +66,7 @@ public CorsConfigurationSource corsConfigurationSource() {
                                    .requestMatchers("/auth/**").permitAll()
                                    .requestMatchers("/roles/**").permitAll() // for now 3la 9bl testing wsafi
                                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                                   .requestMatchers("/auth/mfa/**").hasRole("PRE_AUTH")
                                    .requestMatchers("/ws").permitAll() // Allow WebSocket endpoint HTTP upgrade without JWT at HTTP level; JWT validation happens at STOMP layer
                                 .anyRequest().authenticated() // zdt hadi bach nchof wach authorization verification khdama f subject creation wla la, haydha la bghiti tkamal khadma
                 );

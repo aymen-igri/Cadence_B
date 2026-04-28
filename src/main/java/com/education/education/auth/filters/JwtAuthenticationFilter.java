@@ -18,9 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @AllArgsConstructor
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
@@ -57,39 +55,62 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         UserDetailsImpl userDetails = (UserDetailsImpl) authResult.getPrincipal();
         User user = userRepository.findByUsername(userDetails.getUsername());
 
+        boolean mfaRequired = user.isTotpEnabled() || true; // i will delete true because is just for devlopement phase
         Algorithm algorithm = Algorithm.HMAC256(authUtils.getMySecret());
-        String jwtAccessToken = JWT.create()
-                .withSubject(user.getUsername())
-                .withExpiresAt(new Date(System.currentTimeMillis() + 10*60*1000)) // access token got 10 minutes before it expire
-                .withIssuer(req.getRequestURL().toString())
-                .withClaim("roles", userDetails.getAuthorities().stream().map(auth -> auth.getAuthority()).toList())
-                .sign(algorithm);
 
-        String jwtRefreshToken = JWT.create()
-                .withSubject(user.getUsername())
-                .withExpiresAt(new Date(System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000)) // refresh token got 30 days before it expire
-                .withIssuer(req.getRequestURL().toString())
-                .sign(algorithm);
+        if (mfaRequired) {
+            String mfaToken = JWT.create()
+                    .withSubject(user.getUsername())
+                    .withExpiresAt(new Date(System.currentTimeMillis() + 5 * 60 *1000))
+                    .withClaim("roles", List.of("ROLE_PRE_AUTH"))
+                    .sign(algorithm);
 
-        SignUpDTOResponse.Tokens tokens = new SignUpDTOResponse.Tokens(jwtAccessToken, jwtRefreshToken);
-        
-        String roleStr = user.getRole() != null && !user.getRole().isEmpty() ? user.getRole().get(0).getRole() : null;
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("mfaRequired", true);
+            responseBody.put("mfaToken", mfaToken);
 
-        SignUpDTOResponse.AuthUser authUser = new SignUpDTOResponse.AuthUser(
-                user.getId(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getPhone(),
-                user.getGender() != null ? user.getGender().name() : null,
-                roleStr
-        );
-        
-        SignUpDTOResponse responseBody = new SignUpDTOResponse(tokens, authUser);
+            List<String> methods = new ArrayList<>();
+            methods.add("Email");
+            methods.add("SMS");
+            if (user.isTotpEnabled()) methods.add("Authenticator App");
+            responseBody.put("availableMethods", methods);
 
-        res.setContentType("application/json");
-        new ObjectMapper().writeValue(res.getOutputStream(), responseBody);
+            res.setContentType("application/json");
+            new ObjectMapper().writeValue(res.getOutputStream(), responseBody);
+        }else{
+            String jwtAccessToken = JWT.create()
+                    .withSubject(user.getUsername())
+                    .withExpiresAt(new Date(System.currentTimeMillis() + 10*60*1000))
+                    .withIssuer(req.getRequestURL().toString())
+                    .withClaim("roles", userDetails.getAuthorities().stream().map(auth -> auth.getAuthority()).toList())
+                    .sign(algorithm);
+
+            String jwtRefreshToken = JWT.create()
+                    .withSubject(user.getUsername())
+                    .withExpiresAt(new Date(System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000)) // refresh token got 30 days before it expire
+                    .withIssuer(req.getRequestURL().toString())
+                    .sign(algorithm);
+
+            SignUpDTOResponse.Tokens tokens = new SignUpDTOResponse.Tokens(jwtAccessToken, jwtRefreshToken);
+
+            String roleStr = user.getRole() != null && !user.getRole().isEmpty() ? user.getRole().get(0).getRole() : null;
+
+            SignUpDTOResponse.AuthUser authUser = new SignUpDTOResponse.AuthUser(
+                    user.getId(),
+                    user.getFirstName(),
+                    user.getLastName(),
+                    user.getUsername(),
+                    user.getEmail(),
+                    user.getPhone(),
+                    user.getGender() != null ? user.getGender().name() : null,
+                    roleStr
+            );
+
+            SignUpDTOResponse responseBody = new SignUpDTOResponse(tokens, authUser);
+
+            res.setContentType("application/json");
+            new ObjectMapper().writeValue(res.getOutputStream(), responseBody);
+        }
     }
 
     @Override

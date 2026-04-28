@@ -22,7 +22,7 @@ import lombok.AllArgsConstructor;
 @Service
 @AllArgsConstructor
 @Transactional
-public class MfaService {
+public class MfaSessionService {
     
     private final MfaSessionRepository mfaSessionRepository;
     private final UserRepository userRepository;
