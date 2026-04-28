@@ -31,7 +31,7 @@ public class WeeklySessionPlan extends AuditableEntity {
     @Column(name = "session_id")
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String title;
 
     @Column(nullable = false)

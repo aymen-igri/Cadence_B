@@ -78,20 +78,9 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             res.setContentType("application/json");
             new ObjectMapper().writeValue(res.getOutputStream(), responseBody);
         }else{
-            String jwtAccessToken = JWT.create()
-                    .withSubject(user.getUsername())
-                    .withExpiresAt(new Date(System.currentTimeMillis() + 10*60*1000))
-                    .withIssuer(req.getRequestURL().toString())
-                    .withClaim("roles", userDetails.getAuthorities().stream().map(auth -> auth.getAuthority()).toList())
-                    .sign(algorithm);
+            Map<String, String> token = authUtils.generateTokenResponse(userDetails);
 
-            String jwtRefreshToken = JWT.create()
-                    .withSubject(user.getUsername())
-                    .withExpiresAt(new Date(System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000)) // refresh token got 30 days before it expire
-                    .withIssuer(req.getRequestURL().toString())
-                    .sign(algorithm);
-
-            SignUpDTOResponse.Tokens tokens = new SignUpDTOResponse.Tokens(jwtAccessToken, jwtRefreshToken);
+            SignUpDTOResponse.Tokens tokens = new SignUpDTOResponse.Tokens(token.get("accessToken"), token.get("refreshToken"));
 
             String roleStr = user.getRole() != null && !user.getRole().isEmpty() ? user.getRole().get(0).getRole() : null;
 
