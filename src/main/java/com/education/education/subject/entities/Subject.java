@@ -36,12 +36,8 @@ public class Subject extends AuditableEntity {
     private EPriority priority;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by_id")
+    @JoinColumn(name = "user_id")
     private User createdBy;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "updated_by_id")
-    private User updatedBy;
 
     @OneToMany(mappedBy = "subject", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Goal> goal;

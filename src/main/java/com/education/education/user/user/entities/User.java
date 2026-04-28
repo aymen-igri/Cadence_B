@@ -72,7 +72,4 @@ public class User extends AuditableEntity {
     @OneToMany(mappedBy = "createdBy", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Subject> createdSubjects;
 
-    @OneToMany(mappedBy = "updatedBy", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Subject> updatedSubjects;
-
 }
