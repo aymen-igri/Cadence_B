@@ -55,7 +55,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         UserDetailsImpl userDetails = (UserDetailsImpl) authResult.getPrincipal();
         User user = userRepository.findByUsername(userDetails.getUsername());
 
-        boolean mfaRequired = user.isTotpEnabled(); // i will delete true because is just for devlopement phase
+        boolean mfaRequired = user.isTotpEnabled() || true; // i will delete true because is just for devlopement phase
         Algorithm algorithm = Algorithm.HMAC256(authUtils.getMySecret());
 
         if (mfaRequired) {

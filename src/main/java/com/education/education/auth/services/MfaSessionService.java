@@ -1,6 +1,7 @@
 package com.education.education.auth.services;
 
 import com.education.education.auth.utils.AuthUtils;
+import com.education.education.email.services.EmailService;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,7 @@ public class MfaSessionService {
     private final UserRepository userRepository;
     private final AuthUtils authUtils;
     private final JavaMailSender mailSender;
+    private final EmailService emailService;
 
     private void sendEmail(String to, String code){
         try {
@@ -96,7 +98,7 @@ public class MfaSessionService {
         mfaSessionRepository.save(session);
         
         if (type == EMfaType.EMAIL) {
-            sendEmail(user.getEmail(), code);
+            emailService.sendMfaVerificationEmail(user.getEmail(),code);
         } else if (type == EMfaType.SMS) {
             sendSMS(user.getPhone(), code);
         }

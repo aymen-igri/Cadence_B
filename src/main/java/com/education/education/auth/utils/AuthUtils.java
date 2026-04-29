@@ -26,7 +26,7 @@ public class AuthUtils {
     private String mySecret;
 
     public DecodedJWT verifyDecodedJwtToken(String token) {
-        Algorithm algorithm = Algorithm.HMAC256(mySecret);
+        Algorithm algorithm = Algorithm.HMAC256(this.getMySecret());
         JWTVerifier verifier = JWT.require(algorithm).build();
         return verifier.verify(token);
     }
