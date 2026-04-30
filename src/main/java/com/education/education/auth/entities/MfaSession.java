@@ -32,6 +32,9 @@ public class MfaSession extends AuditableEntity{
     
     private boolean isUsed = false;
 
+    @Column(nullable = true)
+    private int attempts = 0;
+
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private EMfaType type;

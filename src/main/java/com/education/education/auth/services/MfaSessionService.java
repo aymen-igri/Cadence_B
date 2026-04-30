@@ -36,25 +36,6 @@ public class MfaSessionService {
     private final AuthUtils authUtils;
     private final JavaMailSender mailSender;
     private final EmailService emailService;
-
-    private void sendEmail(String to, String code){
-        try {
-            logger.info("Attempting to send MFA email to: {}", to);
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(("aymenigri@gmail.com"));
-            message.setTo(to);
-            message.setSubject("Your StudyPlatform Verification Code");
-            message.setText("Your 6-digit code is: " + code + " It will expire in 5 minutes.");
-            mailSender.send(message);
-            logger.info("Email successfully sent to: {}", to);
-        } catch (MailException e) {
-            logger.error("Failed to send email to {}: {}", to, e.getMessage(), e);
-            throw new RuntimeException("Failed to send verification email", e);
-        } catch (Exception e) {
-            logger.error("Unexpected error sending email to {}: {}", to, e.getMessage(), e);
-            throw new RuntimeException("Unexpected error sending verification email", e);
-        }
-    }
     
     private void sendSMS(String to, String code){
         System.out.println("Sending SMS to " + to + " with code " + code);
@@ -64,12 +45,25 @@ public class MfaSessionService {
 
         User user = userRepository.findByUsername(userdetails.getUsername());
 
-        return mfaSessionRepository.findFirstByUserAndCodeAndTypeAndIsUsedFalseOrderByCreatedAtDesc(user, code, type)
+        return mfaSessionRepository.findFirstByUserAndTypeAndIsUsedFalseOrderByCreatedAtDesc(user, type)
             .filter(session -> !session.isExpired())
             .map(session -> {
-                session.setUsed(true);
+                session.setAttempts(session.getAttempts() + 1);
+
+                if (session.getAttempts() > 5) {
+                    session.setUsed(true);
+                    mfaSessionRepository.save(session);
+                    return false;
+                }
+
+                if (session.getCode().equals(code)) {
+                    session.setUsed(true);
+                    mfaSessionRepository.save(session);
+                    return true;
+                }
+
                 mfaSessionRepository.save(session);
-                return true;
+                return false;
             }).orElse(false);
     }
     
@@ -98,7 +92,7 @@ public class MfaSessionService {
         mfaSessionRepository.save(session);
         
         if (type == EMfaType.EMAIL) {
-            emailService.sendMfaVerificationEmail(user.getEmail(),code);
+            emailService.sendMfaVerificationEmail(user.getEmail(),code, user.getFirstName());
         } else if (type == EMfaType.SMS) {
             sendSMS(user.getPhone(), code);
         }

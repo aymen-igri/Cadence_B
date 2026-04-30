@@ -11,5 +11,5 @@ import com.education.education.user.user.entities.User;
 import com.education.education.auth.enums.EMfaType;
 
 public interface MfaSessionRepository extends JpaRepository<MfaSession, UUID> {
-    Optional<MfaSession> findFirstByUserAndCodeAndTypeAndIsUsedFalseOrderByCreatedAtDesc(User user, String code, EMfaType type);
+    Optional<MfaSession> findFirstByUserAndTypeAndIsUsedFalseOrderByCreatedAtDesc(User user, EMfaType type);
 }

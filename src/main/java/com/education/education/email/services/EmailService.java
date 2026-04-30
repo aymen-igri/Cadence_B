@@ -23,10 +23,11 @@ public class EmailService {
         this.templateEngine = templateEngine;
     }
 
-    public void sendMfaVerificationEmail(String toEmail, String verificationCode) {
+    public void sendMfaVerificationEmail(String toEmail, String verificationCode, String firstName) {
         try {
             Context context = new Context();
             context.setVariable("verificationCode", verificationCode);
+            context.setVariable("firstName", firstName);
 
             String htmlContent = templateEngine.process("mfa-verification", context);
 
