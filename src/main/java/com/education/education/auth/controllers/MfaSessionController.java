@@ -1,5 +1,7 @@
 package com.education.education.auth.controllers;
 
+import com.education.education.auth.deo.requests.MfaAppReq;
+import com.education.education.auth.deo.responses.MfaSetupRes;
 import com.education.education.auth.enums.EMfaType;
 import com.education.education.auth.services.MfaSessionService;
 import lombok.AllArgsConstructor;
@@ -7,10 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -22,7 +21,7 @@ public class MfaSessionController {
     private final MfaSessionService mfaSessionService;
 
 
-    @PostMapping("/trigger")
+    @PostMapping("/email/trigger")
     @PreAuthorize("hasRole('PRE_AUTH')")
     public ResponseEntity<?> triggerMfa(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -32,7 +31,7 @@ public class MfaSessionController {
         return ResponseEntity.ok(Map.of("message", "verification code sent via " + type));
     }
 
-    @PostMapping("/verify")
+    @PostMapping("/email/verify")
     @PreAuthorize("hasRole('PRE_AUTH')")
     public ResponseEntity<?> verifyAndSwap(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -45,5 +44,34 @@ public class MfaSessionController {
         }
 
         return ResponseEntity.ok(mfaSessionService.generateFinalToken(userDetails));
+    }
+
+    @GetMapping("/app/setUp")
+    @PreAuthorize("hasRole('PRE_AUTH')")
+    public ResponseEntity<MfaSetupRes> initialSetUp(
+            @AuthenticationPrincipal UserDetails userDetails
+    ){
+        Map<String, String> response = mfaSessionService.setupTotp(userDetails);
+        return ResponseEntity.ok( new MfaSetupRes(
+                    response.get("secretKey"),
+                    response.get("qrUrl")
+                )
+        );
+    }
+
+    @PostMapping("/app/confirm")
+    @PreAuthorize("hasRole('PRE_AUTH')")
+    public ResponseEntity<?> confirmSetUp(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody MfaAppReq request
+            ){
+
+        boolean valid = mfaSessionService.confirmTotpSetup(userDetails, request.code());
+
+        if (!valid) {
+            return ResponseEntity.status(400).body(Map.of("error", "Invalid verification code. Setup failed."));
+        }else{
+            return ResponseEntity.ok(mfaSessionService.generateFinalToken(userDetails));
+        }
     }
 }

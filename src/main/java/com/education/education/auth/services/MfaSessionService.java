@@ -1,9 +1,9 @@
 package com.education.education.auth.services;
 
 import com.education.education.auth.utils.AuthUtils;
+import com.education.education.auth.utils.MFAUtils;
 import com.education.education.email.services.EmailService;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.stereotype.Service;
 import com.education.education.user.user.entities.User;
 import com.education.education.user.user.repositories.UserRepository;
@@ -13,7 +13,6 @@ import com.education.education.auth.enums.EMfaType;
 import org.jboss.aerogear.security.otp.Totp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.mail.MailException;
 
 import com.education.education.auth.repositories.MfaSessionRepository;
 
@@ -66,12 +65,50 @@ public class MfaSessionService {
                 return false;
             }).orElse(false);
     }
+
+    public Map<String, String> setupTotp(UserDetails userDetails){
+        User user = userRepository.findByUsername(userDetails.getUsername());
+
+        String secret = MFAUtils.generateSecretKey();
+        user.setTotpSecret(secret);
+        userRepository.save(user);
+        return Map.of(
+                "secretKey", secret,
+                "qrUrl", MFAUtils.generateQrUrl(secret, user.getEmail())
+        );
+    }
+
+    public boolean confirmTotpSetup(UserDetails userDetails, String code){
+        User user = userRepository.findByUsername(userDetails.getUsername());
+        if (user.getTotpSecret() == null) {
+            return false;
+        }
+
+        boolean isValid = verifyAppCode(user.getTotpSecret(), code);
+        if (isValid) {
+            user.setTotpEnabled(true);
+            userRepository.save(user);
+            return true;
+        }
+
+        return false;
+    }
     
     public boolean verifyAppCode(String secret, String code){
         try{
+            if (secret == null || code == null) return false;
+
+            String cleanCode = code.trim();
             Totp totp = new Totp(secret);
-            return totp.verify(code);
+
+            boolean isMathValid = totp.verify(cleanCode);
+            boolean isDirectMatch = cleanCode.equals(totp.now());
+            System.out.println(totp.now());
+            System.out.println("DEBUG: isMathValid: " + isMathValid);
+            System.out.println("DEBUG: isDirectMatch: " + isDirectMatch);
+            return isMathValid || isDirectMatch;
         } catch (Exception e) {
+            System.err.println("TOTP Error: " + e.getMessage());
             return false;
         }
     }
@@ -103,11 +140,15 @@ public class MfaSessionService {
     }
 
     public boolean verifyMfa(UserDetails userDetails, String code, EMfaType type){
+
+
         if (type == EMfaType.APP){
-            return verifyAppCode(
-                    userRepository.findByUsername(userDetails.getUsername()).getTotpSecret(),
-                    code
-            );
+            User user = userRepository.findByUsername(userDetails.getUsername());
+            if (user.getTotpSecret() == null || !user.isTotpEnabled()) {
+                return false;
+            }
+
+            return verifyAppCode(user.getTotpSecret(), code);
         }else {
             return verifySessionCode(userDetails, code, type);
         }
