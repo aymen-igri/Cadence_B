@@ -3,6 +3,7 @@ package com.education.education.availability.controllers;
 import com.education.education.availability.availabilityPlan.dto.response.CreateAvailabilityPlanRes;
 import com.education.education.availability.availabilityPlan.services.AvailabilityPlanService;
 import com.education.education.availability.dto.request.CreateAvailabilityRequest;
+import com.education.education.availability.dto.request.UpdateAvailabilitySlotsRequest;
 import com.education.education.availability.dto.response.CreateAvailabilityRes;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.AllArgsConstructor;
@@ -12,6 +13,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -52,6 +54,15 @@ public class AvailabilityController {
         @PathVariable UUID planId
     ){ 
         return ResponseEntity.ok(availabilityPlanService.getAvailabilityPlan(userDetails, planId));
+    }
+
+    @PutMapping("/{planId}/slots")
+    public ResponseEntity<CreateAvailabilityRes> updateAvailabilitySlots(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable UUID planId,
+            @Valid @RequestBody UpdateAvailabilitySlotsRequest request
+    ) {
+        return ResponseEntity.ok(availabilityPlanService.updateAvailabilitySlots(userDetails, planId, request));
     }
     
 }

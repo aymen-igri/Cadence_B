@@ -10,4 +10,6 @@ import java.util.UUID;
 public interface AvailabilitySlotRepository extends JpaRepository<AvailabilitySlot, UUID> {
 
     List<AvailabilitySlot> findAllByAvailabilityPlan(AvailabilityPlan availabilityPlan);
+
+    void deleteAllByAvailabilityPlan(AvailabilityPlan availabilityPlan);
 }
