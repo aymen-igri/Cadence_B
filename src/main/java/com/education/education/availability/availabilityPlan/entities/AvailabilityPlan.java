@@ -1,6 +1,7 @@
 package com.education.education.availability.availabilityPlan.entities;
 
 import com.education.education.availability.availabilityPlan.enums.EAvailabilityStatus;
+import com.education.education.availability.availabilitySlot.entities.AvailabilitySlot;
 import com.education.education.base.auditableEntity.AuditableEntity;
 import com.education.education.user.user.entities.User;
 import jakarta.persistence.*;
@@ -9,6 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -34,4 +36,7 @@ public class AvailabilityPlan extends AuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+
+    @OneToMany(mappedBy = "availabilityPlan", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AvailabilitySlot> slots;
 }

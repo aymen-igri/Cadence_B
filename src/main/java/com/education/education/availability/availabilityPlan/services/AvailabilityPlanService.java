@@ -7,6 +7,7 @@ import com.education.education.availability.availabilityPlan.mappers.Availabilit
 import com.education.education.availability.availabilityPlan.repositories.AvailabilityPlanRepository;
 import com.education.education.availability.availabilitySlot.dto.request.CreateAvailabilitySlotReq;
 import com.education.education.availability.availabilitySlot.dto.response.CreateAvailabilitySlotRes;
+import com.education.education.availability.availabilitySlot.mappers.AvailabilitySlotMapper;
 import com.education.education.availability.availabilitySlot.services.AvailabilitySlotService;
 import com.education.education.availability.dto.response.CreateAvailabilityRes;
 import com.education.education.user.user.repositories.UserRepository;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @Transactional
@@ -26,6 +28,7 @@ public class AvailabilityPlanService {
     private final UserRepository userRepository;
     private final AvailabilityPlanRepository availabilityPlanRepository;
     private final AvailabilityPlanMapper availabilityPlanMapper;
+    private final AvailabilitySlotMapper availabilitySlotMapper;
     private final AvailabilitySlotService availabilitySlotService;
 
     public CreateAvailabilityRes createAvailabilityPlan(
@@ -58,5 +61,27 @@ public class AvailabilityPlanService {
                 .stream()
                 .map(availabilityPlanMapper::toCreateAvailabilityPlanRes)
                 .toList();
+    }
+
+    public CreateAvailabilityRes getAvailabilityPlan(
+            UserDetails mainUser,
+            UUID planId
+    ) {
+        AvailabilityPlan plan = availabilityPlanRepository.findById(planId)
+                .orElseThrow(() -> new RuntimeException("Availability Plan not found"));
+
+        if (!plan.getUser().getUsername().equals(mainUser.getUsername())) {
+            throw new RuntimeException("Unauthorized access to this availability plan");
+        }
+
+        List<CreateAvailabilitySlotRes> slots = plan.getSlots()
+                .stream()
+                .map(availabilitySlotMapper::toCreateAvailabilitySlotRes)
+                .toList();
+
+        return new CreateAvailabilityRes(
+                availabilityPlanMapper.toCreateAvailabilityPlanRes(plan),
+                slots
+        );
     }
 }
