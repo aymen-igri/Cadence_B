@@ -1,6 +1,7 @@
 package com.education.education.availability.availabilityPlan.services;
 
 import com.education.education.availability.availabilityPlan.dto.request.CreateAvailabilityPlanReq;
+import com.education.education.availability.availabilityPlan.dto.response.CreateAvailabilityPlanRes;
 import com.education.education.availability.availabilityPlan.entities.AvailabilityPlan;
 import com.education.education.availability.availabilityPlan.mappers.AvailabilityPlanMapper;
 import com.education.education.availability.availabilityPlan.repositories.AvailabilityPlanRepository;
@@ -46,5 +47,16 @@ public class AvailabilityPlanService {
                 availabilityPlanMapper.toCreateAvailabilityPlanRes(savedPlan),
                 createdSlots
         );
+    }
+
+    public List<CreateAvailabilityPlanRes> getAllAvailabilityPlans(
+            UserDetails mainUser
+    ) {
+        return availabilityPlanRepository.findAllByUser(
+                        userRepository.findByUsername(mainUser.getUsername())
+                )
+                .stream()
+                .map(availabilityPlanMapper::toCreateAvailabilityPlanRes)
+                .toList();
     }
 }
