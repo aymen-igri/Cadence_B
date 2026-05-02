@@ -17,7 +17,6 @@ public class WeeklySessionPlanMapper {
         WeeklySessionPlan weeklySessionPlan = new WeeklySessionPlan();
         weeklySessionPlan.setTitle(request.title());
         weeklySessionPlan.setStartTime(request.startTime());
-        weeklySessionPlan.setSessionStatus(request.status());
 
         return weeklySessionPlan;
     }

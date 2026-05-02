@@ -38,7 +38,7 @@ public class SubSession extends AuditableEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ESubSessionStatus subSessionStatus;
+    private ESubSessionStatus subSessionStatus = ESubSessionStatus.PENDING;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "session_id")

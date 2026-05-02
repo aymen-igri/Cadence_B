@@ -7,6 +7,8 @@ import com.education.education.session.dto.response.CreateSessionRes;
 import com.education.education.session.dto.response.GenerationSessionRes;
 import com.education.education.session.services.GenerationService;
 import com.education.education.session.weeklySessionPlan.services.WeeklySessionPlanService;
+import com.education.education.session.subSession.dto.request.UpdateSubSessionStatusReq;
+import com.education.education.session.subSession.dto.response.CreateSubSessionRes;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -39,23 +41,21 @@ public class SessionController {
     @PostMapping("/create")
     public ResponseEntity<CreateSessionRes> createSession(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Valid @RequestBody CreateSessionReq sessionReq
-    ){
-        return ResponseEntity.ok(weeklySessionPlanService.createWeeklySessionPlan(userDetails, sessionReq.weeklySession(), sessionReq.subSessions()));
+            @Valid @RequestBody CreateSessionReq sessionReq) {
+        return ResponseEntity.ok(weeklySessionPlanService.createWeeklySessionPlan(userDetails,
+                sessionReq.weeklySession(), sessionReq.subSessions()));
     }
 
     @PostMapping("/generate")
     public ResponseEntity<GenerationSessionRes> generateSession(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Valid @RequestBody GenerationSessionReq sessionReq
-    ){
+            @Valid @RequestBody GenerationSessionReq sessionReq) {
         return ResponseEntity.ok(generationService.generateSession(sessionReq, userDetails));
     }
 
     @GetMapping("/all")
     public ResponseEntity<List<CreateSessionRes>> getAllWeeklySessionPlans(
-            @AuthenticationPrincipal UserDetails userDetails
-    ){
+            @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(weeklySessionPlanService.getAllWeeklySessionPlans(userDetails));
     }
 
@@ -63,17 +63,32 @@ public class SessionController {
     public ResponseEntity<CreateSessionRes> updateWeeklySessionPlan(
             @PathVariable UUID sessionId,
             @AuthenticationPrincipal UserDetails userDetails,
-            @Valid @RequestBody UpdateSessionReq request
-    ) {
+            @Valid @RequestBody UpdateSessionReq request) {
         return ResponseEntity.ok(weeklySessionPlanService.updateWeeklySessionPlan(sessionId, request, userDetails));
     }
 
     @DeleteMapping("/delete/{sessionId}")
     public ResponseEntity<Void> deleteWeeklySessionPlan(
             @PathVariable UUID sessionId,
-            @AuthenticationPrincipal UserDetails userDetails
-    ) {
+            @AuthenticationPrincipal UserDetails userDetails) {
         weeklySessionPlanService.deleteWeeklySessionPlan(sessionId, userDetails);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{weeklySessionId}/sub-sessions/{subSessionId}/status")
+    public ResponseEntity<?> updateSubSessionStatus(
+            @PathVariable UUID weeklySessionId,
+            @PathVariable UUID subSessionId,
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @RequestBody UpdateSubSessionStatusReq request) {
+        try {
+            CreateSubSessionRes res = weeklySessionPlanService.updateSubSessionStatus(weeklySessionId, subSessionId,
+                    request, userDetails);
+            return ResponseEntity.ok(res);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        }
     }
 }

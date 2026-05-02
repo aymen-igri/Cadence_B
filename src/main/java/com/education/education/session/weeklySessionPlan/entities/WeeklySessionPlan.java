@@ -39,7 +39,7 @@ public class WeeklySessionPlan extends AuditableEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ESessionStatus sessionStatus;
+    private ESessionStatus sessionStatus = ESessionStatus.PENDING;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

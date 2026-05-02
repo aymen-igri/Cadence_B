@@ -19,7 +19,6 @@ public class SubSessionMapper {
         subSession.setDayOfWeek(request.dayOfWeek());
         subSession.setStartTime(request.startTime());
         subSession.setEndTime(request.endTime());
-        subSession.setSubSessionStatus(request.status());
         subSession.setSubject(subjectRepository.findById(request.subjectId())
                 .orElseThrow(() -> new IllegalArgumentException("Subject not found")));
 

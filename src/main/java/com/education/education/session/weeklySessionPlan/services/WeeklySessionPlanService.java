@@ -23,6 +23,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.education.education.session.subSession.dto.request.UpdateSubSessionStatusReq;
+import com.education.education.session.subSession.enums.ESubSessionStatus;
+import com.education.education.session.weeklySessionPlan.enums.ESessionStatus;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,22 +51,56 @@ public class WeeklySessionPlanService {
     public CreateSessionRes createWeeklySessionPlan(
             UserDetails mainUser,
             CreateWeeklySessionReq sessionReq,
-            List<CreateSubSessionReq> subSessionsReq
-    ){
+            List<CreateSubSessionReq> subSessionsReq) {
         WeeklySessionPlan session = weeklySessionPlanMapper.toWeeklySessionPlan(sessionReq);
         session.setUser(userRepository.findByUsername(mainUser.getUsername()));
         WeeklySessionPlan savedSession = weeklySessionPlanRepository.save(session);
 
         List<CreateSubSessionRes> createdSubSessions = new ArrayList<>();
 
-        for(CreateSubSessionReq subSessionReq:subSessionsReq){
+        for (CreateSubSessionReq subSessionReq : subSessionsReq) {
             createdSubSessions.add(subSessionPlanService.createSubSession(subSessionReq, savedSession));
         }
 
         return new CreateSessionRes(
                 weeklySessionPlanMapper.toCreateWeeklySessionRes(savedSession),
-                createdSubSessions
-        );
+                createdSubSessions);
+    }
+
+    public CreateSubSessionRes updateSubSessionStatus(
+            UUID weeklySessionId,
+            UUID subSessionId,
+            UpdateSubSessionStatusReq request,
+            UserDetails mainUser) {
+        User user = userRepository.findByUsername(mainUser.getUsername());
+        if (user == null) {
+            throw new IllegalArgumentException("User not found");
+        }
+
+        WeeklySessionPlan weeklySessionPlan = weeklySessionPlanRepository.findById(weeklySessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Weekly session plan not found"));
+
+        if (!weeklySessionPlan.getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException("You are not allowed to modify this weekly session plan");
+        }
+
+        if (weeklySessionPlan.getSessionStatus() != ESessionStatus.PENDING) {
+            throw new IllegalStateException("Weekly session is not pending and cannot be modified");
+        }
+
+        SubSession subSession = subSessionRepository.findById(subSessionId)
+                .orElseThrow(() -> new IllegalArgumentException("SubSession not found"));
+
+        if (subSession.getWeeklySessionPlan() == null
+                || !subSession.getWeeklySessionPlan().getId().equals(weeklySessionId)) {
+            throw new IllegalArgumentException("SubSession does not belong to the provided weekly session");
+        }
+
+        ESubSessionStatus newStatus = request.status();
+        subSession.setSubSessionStatus(newStatus);
+        SubSession saved = subSessionRepository.save(subSession);
+
+        return subSessionMapper.toCreateSubSessionRes(saved);
     }
 
     public List<CreateSessionRes> getAllWeeklySessionPlans(UserDetails mainUser) {
@@ -75,8 +113,7 @@ public class WeeklySessionPlanService {
 
         return plans.stream().map(plan -> new CreateSessionRes(
                 weeklySessionPlanMapper.toCreateWeeklySessionRes(plan),
-                subSessionPlanService.getSubSessionsByPlan(plan)
-        )).toList();
+                subSessionPlanService.getSubSessionsByPlan(plan))).toList();
     }
 
     public void deleteWeeklySessionPlan(UUID sessionId, UserDetails mainUser) {
@@ -98,8 +135,7 @@ public class WeeklySessionPlanService {
     public CreateSessionRes updateWeeklySessionPlan(
             UUID sessionId,
             UpdateSessionReq request,
-            UserDetails mainUser
-    ) {
+            UserDetails mainUser) {
         User user = userRepository.findByUsername(mainUser.getUsername());
         if (user == null) {
             throw new IllegalArgumentException("User not found");
@@ -124,20 +160,19 @@ public class WeeklySessionPlanService {
 
         return new CreateSessionRes(
                 weeklySessionPlanMapper.toCreateWeeklySessionRes(savedWeeklySessionPlan),
-                subSessionPlanService.getSubSessionsByPlan(savedWeeklySessionPlan)
-        );
+                subSessionPlanService.getSubSessionsByPlan(savedWeeklySessionPlan));
     }
 
     private void reconcileSubSessions(
             WeeklySessionPlan weeklySessionPlan,
             User user,
-            List<UpdateSubSessionReq> subSessionRequests
-    ) {
+            List<UpdateSubSessionReq> subSessionRequests) {
         if (subSessionRequests.isEmpty()) {
             throw new IllegalArgumentException("At least one sub-session must remain");
         }
 
-        List<SubSession> existingSubSessions = subSessionRepository.findByWeeklySessionPlanOrderByStartTimeAsc(weeklySessionPlan);
+        List<SubSession> existingSubSessions = subSessionRepository
+                .findByWeeklySessionPlanOrderByStartTimeAsc(weeklySessionPlan);
         Map<UUID, SubSession> subSessionById = new HashMap<>();
         for (SubSession subSession : existingSubSessions) {
             subSessionById.put(subSession.getId(), subSession);
@@ -187,8 +222,7 @@ public class WeeklySessionPlanService {
     private void createSubSessionFromUpdateRequest(
             WeeklySessionPlan weeklySessionPlan,
             User user,
-            UpdateSubSessionReq request
-    ) {
+            UpdateSubSessionReq request) {
         if (request.dayOfWeek() == null || request.startTime() == null || request.endTime() == null
                 || request.status() == null || request.subjectId() == null) {
             throw new IllegalArgumentException("All sub-session fields are required when creating a new sub-session");
@@ -206,7 +240,8 @@ public class WeeklySessionPlanService {
     }
 
     private void validateSubSessionTimeForUpdate(SubSession existingSubSession, UpdateSubSessionReq request) {
-        java.time.LocalTime nextStart = request.startTime() != null ? request.startTime() : existingSubSession.getStartTime();
+        java.time.LocalTime nextStart = request.startTime() != null ? request.startTime()
+                : existingSubSession.getStartTime();
         java.time.LocalTime nextEnd = request.endTime() != null ? request.endTime() : existingSubSession.getEndTime();
 
         if (!nextStart.isBefore(nextEnd)) {
