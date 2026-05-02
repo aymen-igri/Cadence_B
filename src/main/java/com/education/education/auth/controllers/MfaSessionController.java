@@ -31,7 +31,7 @@ public class MfaSessionController {
         return ResponseEntity.ok(Map.of("message", "verification code sent via " + type));
     }
 
-    @PostMapping("/email/verify")
+    @PostMapping("/verify")
     @PreAuthorize("hasRole('PRE_AUTH')")
     public ResponseEntity<?> verifyAndSwap(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -47,7 +47,7 @@ public class MfaSessionController {
     }
 
     @GetMapping("/app/setUp")
-    @PreAuthorize("hasRole('PRE_AUTH')")
+    @PreAuthorize("hasRole('GENERAL_USER')")
     public ResponseEntity<MfaSetupRes> initialSetUp(
             @AuthenticationPrincipal UserDetails userDetails
     ){
@@ -60,7 +60,7 @@ public class MfaSessionController {
     }
 
     @PostMapping("/app/confirm")
-    @PreAuthorize("hasRole('PRE_AUTH')")
+    @PreAuthorize("hasRole('GENERAL_USER')")
     public ResponseEntity<?> confirmSetUp(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody MfaAppReq request

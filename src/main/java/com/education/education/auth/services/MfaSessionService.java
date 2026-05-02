@@ -3,6 +3,7 @@ package com.education.education.auth.services;
 import com.education.education.auth.utils.AuthUtils;
 import com.education.education.auth.utils.MFAUtils;
 import com.education.education.email.services.EmailService;
+import com.education.education.auth.deo.responses.SignUpDTOResponse;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import com.education.education.user.user.entities.User;
@@ -135,7 +136,7 @@ public class MfaSessionService {
         }
     }
 
-    public Map<String, String> generateFinalToken(UserDetails userDetails){
+    public SignUpDTOResponse generateFinalToken(UserDetails userDetails){
         return authUtils.generateTokenResponse(userDetails);
     }
 

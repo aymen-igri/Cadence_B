@@ -1,9 +1,13 @@
 package com.education.education.auth.utils;
 
+import com.education.education.auth.deo.responses.SignUpDTOResponse;
+import com.education.education.auth.deo.responses.SignUpDTOResponse.Tokens;
+import com.education.education.auth.deo.responses.SignUpDTOResponse.AuthUser;
 import com.education.education.user.user.entities.User;
 import com.education.education.user.user.repositories.UserRepository;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -31,7 +35,7 @@ public class AuthUtils {
         return verifier.verify(token);
     }
 
-    public Map<String, String> generateTokenResponse(UserDetails userDetails){
+    public SignUpDTOResponse generateTokenResponse(UserDetails userDetails){
 
         User user = userRepository.findByUsername(userDetails.getUsername());
         Algorithm algorithm = Algorithm.HMAC256(this.getMySecret());
@@ -47,10 +51,25 @@ public class AuthUtils {
                 .withExpiresAt(new Date(System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000))
                 .sign(algorithm);
 
-        return Map.of(
-                "accessToken", jwtAccessToken,
-                "refreshToken", jwtRefreshToken
+        String gender = user.getGender() != null ? user.getGender().name() : null;
+
+        String role = user.getRole() != null && !user.getRole().isEmpty() ? user.getRole().get(0).getRole() : null;
+
+        return new SignUpDTOResponse(
+            new Tokens(
+                jwtAccessToken,
+                jwtRefreshToken
+            ),
+            new AuthUser(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getPhone(),
+                gender,
+                role
+            )
         );
     }
 }
-

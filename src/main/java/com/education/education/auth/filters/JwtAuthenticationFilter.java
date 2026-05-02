@@ -3,6 +3,7 @@ package com.education.education.auth.filters;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.education.education.auth.deo.responses.SignUpDTOResponse;
+import com.education.education.auth.deo.responses.SignUpDTOResponse.AuthUser;
 import com.education.education.auth.utils.AuthUtils;
 import com.education.education.user.user.entities.User;
 import com.education.education.user.user.repositories.UserRepository;
@@ -26,7 +27,6 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     private final AuthenticationManager authenticationManager;
     private final AuthUtils authUtils;
     private final UserRepository userRepository;
-    
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest req, HttpServletResponse res){
@@ -34,7 +34,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             ObjectMapper mapper = new ObjectMapper();
             @SuppressWarnings("unchecked")
             Map<String, String> credentials = mapper.readValue(req.getInputStream(), Map.class);
-            
+
             String identifier = credentials.get("identifier");
             String password = credentials.get("password");
 
@@ -54,8 +54,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     )throws IOException{
         UserDetailsImpl userDetails = (UserDetailsImpl) authResult.getPrincipal();
         User user = userRepository.findByUsername(userDetails.getUsername());
-
-        boolean mfaRequired = user.isTotpEnabled(); // i will delete true because is just for devlopement phase
+        boolean mfaRequired = user.isTotpEnabled();
         Algorithm algorithm = Algorithm.HMAC256(authUtils.getMySecret());
 
         if (mfaRequired) {
@@ -65,22 +64,35 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                     .withClaim("roles", List.of("ROLE_PRE_AUTH"))
                     .sign(algorithm);
 
+            String gender = user.getGender() != null ? user.getGender().name() : null;
+                    
             Map<String, Object> responseBody = new HashMap<>();
-            responseBody.put("mfaRequired", true);
-            responseBody.put("mfaToken", mfaToken);
+            responseBody.put("mfaTokens", mfaToken);
+
+            AuthUser authUser = new AuthUser(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getPhone(),
+                gender,
+                "ROLE_PRE_AUTH"
+            );
+            
+            responseBody.put("user", authUser);
 
             List<String> methods = new ArrayList<>();
             methods.add("Email");
-            methods.add("SMS");
             if (user.isTotpEnabled()) methods.add("Authenticator App");
             responseBody.put("availableMethods", methods);
 
             res.setContentType("application/json");
             new ObjectMapper().writeValue(res.getOutputStream(), responseBody);
         }else{
-            Map<String, String> token = authUtils.generateTokenResponse(userDetails);
+            SignUpDTOResponse token = authUtils.generateTokenResponse(userDetails);
 
-            SignUpDTOResponse.Tokens tokens = new SignUpDTOResponse.Tokens(token.get("accessToken"), token.get("refreshToken"));
+            SignUpDTOResponse.Tokens tokens = token.tokens();
 
             String roleStr = user.getRole() != null && !user.getRole().isEmpty() ? user.getRole().get(0).getRole() : null;
 
