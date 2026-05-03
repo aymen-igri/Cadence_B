@@ -37,10 +37,6 @@ public class MfaSessionService {
     private final JavaMailSender mailSender;
     private final EmailService emailService;
     
-    private void sendSMS(String to, String code){
-        System.out.println("Sending SMS to " + to + " with code " + code);
-    }
-    
     public boolean verifySessionCode(UserDetails userdetails, String code, EMfaType type){
 
         User user = userRepository.findByUsername(userdetails.getUsername());
@@ -114,7 +110,7 @@ public class MfaSessionService {
         }
     }
     
-    public void sendMfaCode(UserDetails userDetails, EMfaType type) {
+    public void sendMfaEmailCode(UserDetails userDetails) {
         
         User user = userRepository.findByUsername(userDetails.getUsername());
         
@@ -124,16 +120,12 @@ public class MfaSessionService {
             .user(user)
             .code(code)
             .expiry(LocalDateTime.now().plusMinutes(5))
-            .type(type)
+            .type(EMfaType.EMAIL)
             .isUsed(false)
             .build();
         mfaSessionRepository.save(session);
         
-        if (type == EMfaType.EMAIL) {
-            emailService.sendMfaVerificationEmail(user.getEmail(),code, user.getFirstName());
-        } else if (type == EMfaType.SMS) {
-            sendSMS(user.getPhone(), code);
-        }
+        emailService.sendMfaVerificationEmail(user.getEmail(),code, user.getFirstName());
     }
 
     public SignUpDTOResponse generateFinalToken(UserDetails userDetails){

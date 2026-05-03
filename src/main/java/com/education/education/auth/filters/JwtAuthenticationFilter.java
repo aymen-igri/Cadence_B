@@ -11,6 +11,8 @@ import com.education.education.user.user.wrapper.UserDetailsImpl;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.*;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,54 +20,67 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import tools.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
-import java.util.*;
-
 @AllArgsConstructor
-public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
+public class JwtAuthenticationFilter
+    extends UsernamePasswordAuthenticationFilter
+{
 
     private final AuthenticationManager authenticationManager;
     private final AuthUtils authUtils;
     private final UserRepository userRepository;
 
     @Override
-    public Authentication attemptAuthentication(HttpServletRequest req, HttpServletResponse res){
+    public Authentication attemptAuthentication(
+        HttpServletRequest req,
+        HttpServletResponse res
+    ) {
         try {
             ObjectMapper mapper = new ObjectMapper();
             @SuppressWarnings("unchecked")
-            Map<String, String> credentials = mapper.readValue(req.getInputStream(), Map.class);
+            Map<String, String> credentials = mapper.readValue(
+                req.getInputStream(),
+                Map.class
+            );
 
             String identifier = credentials.get("identifier");
             String password = credentials.get("password");
 
-            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(identifier, password);
+            UsernamePasswordAuthenticationToken authenticationToken =
+                new UsernamePasswordAuthenticationToken(identifier, password);
             return authenticationManager.authenticate(authenticationToken);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to parse authentication request body", e);
+            throw new RuntimeException(
+                "Failed to parse authentication request body",
+                e
+            );
         }
     }
 
     @Override
     public void successfulAuthentication(
-            HttpServletRequest req,
-            HttpServletResponse res,
-            FilterChain chain,
-            Authentication authResult
-    )throws IOException{
-        UserDetailsImpl userDetails = (UserDetailsImpl) authResult.getPrincipal();
+        HttpServletRequest req,
+        HttpServletResponse res,
+        FilterChain chain,
+        Authentication authResult
+    ) throws IOException {
+        UserDetailsImpl userDetails =
+            (UserDetailsImpl) authResult.getPrincipal();
         User user = userRepository.findByUsername(userDetails.getUsername());
         boolean mfaRequired = user.isTotpEnabled();
         Algorithm algorithm = Algorithm.HMAC256(authUtils.getMySecret());
 
         if (mfaRequired) {
             String mfaToken = JWT.create()
-                    .withSubject(user.getUsername())
-                    .withExpiresAt(new Date(System.currentTimeMillis() + 5 * 60 *1000))
-                    .withClaim("roles", List.of("ROLE_PRE_AUTH"))
-                    .sign(algorithm);
+                .withSubject(user.getUsername())
+                .withExpiresAt(
+                    new Date(System.currentTimeMillis() + 5 * 60 * 1000)
+                )
+                .withClaim("roles", List.of("ROLE_PRE_AUTH"))
+                .sign(algorithm);
 
-            String gender = user.getGender() != null ? user.getGender().name() : null;
-                    
+            String gender =
+                user.getGender() != null ? user.getGender().name() : null;
+
             Map<String, Object> responseBody = new HashMap<>();
             responseBody.put("mfaTokens", mfaToken);
 
@@ -79,7 +94,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                 gender,
                 "ROLE_PRE_AUTH"
             );
-            
+
             responseBody.put("user", authUser);
 
             List<String> methods = new ArrayList<>();
@@ -89,14 +104,20 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
             res.setContentType("application/json");
             new ObjectMapper().writeValue(res.getOutputStream(), responseBody);
-        }else{
-            SignUpDTOResponse token = authUtils.generateTokenResponse(userDetails);
+        } else {
+            SignUpDTOResponse token = authUtils.generateTokenResponse(
+                userDetails
+            );
 
             SignUpDTOResponse.Tokens tokens = token.tokens();
 
-            String roleStr = user.getRole() != null && !user.getRole().isEmpty() ? user.getRole().get(0).getRole() : null;
+            String roleStr =
+                user.getRole() != null && !user.getRole().isEmpty()
+                    ? user.getRole().get(0).getRole()
+                    : null;
 
-            SignUpDTOResponse.AuthUser authUser = new SignUpDTOResponse.AuthUser(
+            SignUpDTOResponse.AuthUser authUser =
+                new SignUpDTOResponse.AuthUser(
                     user.getId(),
                     user.getFirstName(),
                     user.getLastName(),
@@ -105,9 +126,12 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                     user.getPhone(),
                     user.getGender() != null ? user.getGender().name() : null,
                     roleStr
-            );
+                );
 
-            SignUpDTOResponse responseBody = new SignUpDTOResponse(tokens, authUser);
+            SignUpDTOResponse responseBody = new SignUpDTOResponse(
+                tokens,
+                authUser
+            );
 
             res.setContentType("application/json");
             new ObjectMapper().writeValue(res.getOutputStream(), responseBody);
@@ -116,9 +140,9 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     @Override
     protected void unsuccessfulAuthentication(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            org.springframework.security.core.AuthenticationException failed
+        HttpServletRequest request,
+        HttpServletResponse response,
+        org.springframework.security.core.AuthenticationException failed
     ) throws IOException {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json");
