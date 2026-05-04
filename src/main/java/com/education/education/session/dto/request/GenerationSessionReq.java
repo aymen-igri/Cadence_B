@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.UUID;
 
 public record GenerationSessionReq(
+        @NotNull(message = "Title is required")
+        String title,
+
         @NotNull(message = "Goal list is required")
         List<UUID> goalsList,
 

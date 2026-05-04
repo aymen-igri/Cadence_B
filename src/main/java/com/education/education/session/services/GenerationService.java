@@ -21,8 +21,6 @@ import com.education.education.session.weeklySessionPlan.enums.EGenerationType;
 import com.education.education.session.weeklySessionPlan.enums.EPlanStatus;
 import com.education.education.session.weeklySessionPlan.enums.ESessionStatus;
 import com.education.education.session.weeklySessionPlan.repositories.WeeklySessionPlanRepository;
-import com.education.education.subject.entities.Subject;
-import com.education.education.subject.repositories.SubjectRepository;
 import com.education.education.user.user.entities.User;
 import com.education.education.user.user.repositories.UserRepository;
 import lombok.AllArgsConstructor;
@@ -42,7 +40,6 @@ import java.util.List;
 public class GenerationService {
 
     private final UserRepository userRepository;
-    private final SubjectRepository subjectRepository;
     private final AvailabilitySlotRepository availabilitySlotRepository;
     private final WeeklySessionPlanRepository weeklySessionPlanRepository;
     private final SubSessionRepository subSessionRepository;
@@ -59,13 +56,6 @@ public class GenerationService {
         AvailabilityPlan availabilityPlan = data.availabilityPlan();
         LocalDateTime weekStartDate = data.weekStartDate();
 
-        List<Subject> subjects = subjectRepository.findAllById(
-                goals.stream()
-                        .map(Goal::getSubject)
-                        .map(Subject::getId)
-                        .toList()
-        );
-
         WeeklySessionPlan newWeeklySessionPlan = new WeeklySessionPlan();
         newWeeklySessionPlan.setUser(user);
         newWeeklySessionPlan.setStartTime(weekStartDate);
@@ -73,6 +63,7 @@ public class GenerationService {
         newWeeklySessionPlan.setPlanStatus(EPlanStatus.DRAFT);
         newWeeklySessionPlan.setGenerationType(EGenerationType.AUTO_GENERATED);
         newWeeklySessionPlan.setAvailabilityPlan(availabilityPlan);
+        newWeeklySessionPlan.setTitle(req.title());
 
         if (req.usePriority()){
             newWeeklySessionPlan.setGenerationAlgoType(EGenerationAlgoType.PRIORITY_FIRST);

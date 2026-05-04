@@ -34,9 +34,6 @@ public class GoalService {
             CreateGoalReq goal,
             UUID subjectId
     ){
-        if (goal.deadline() != null && goal.deadline().isBefore(java.time.LocalDate.now())) {
-            throw new IllegalArgumentException("Deadline cannot be in the past");
-        }
         
         User user = userRepository.findByUsername(mainUser.getUsername());
         if (user == null) {
@@ -95,10 +92,6 @@ public class GoalService {
 
         if (!goal.getUser().getId().equals(user.getId())) {
             throw new AccessDeniedException("You are not allowed to update this goal");
-        }
-
-        if (request.deadline() != null && request.deadline().isBefore(java.time.LocalDate.now())) {
-            throw new IllegalArgumentException("Deadline cannot be in the past");
         }
 
         goalMapper.updateGoalFromReq(request, goal);

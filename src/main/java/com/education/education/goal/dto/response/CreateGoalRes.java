@@ -6,7 +6,6 @@ public record CreateGoalRes(
         String title,
         float targetHoursPerWeek,
         float progress,
-        java.time.LocalDate deadline,
         UUID subjectId,
         String subjectName
 ) {

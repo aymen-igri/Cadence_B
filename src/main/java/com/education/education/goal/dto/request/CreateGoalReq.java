@@ -11,9 +11,6 @@ public record CreateGoalReq(
         float targetHoursPerWeek,
 
         @NotNull(message = "Progress is required")
-        float progress,
-
-        @NotNull(message = "Deadline is required")
-        java.time.LocalDate deadline
+        float progress
 ) {
 }

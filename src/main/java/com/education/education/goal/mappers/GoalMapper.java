@@ -15,7 +15,6 @@ public class GoalMapper {
         goal.setTitle(request.title());
         goal.setTargetHoursPerWeek(request.targetHoursPerWeek());
         goal.setProgress(request.progress());
-        goal.setDeadline(request.deadline());
         goal.setSubject(subject);
 
         return goal;
@@ -31,9 +30,6 @@ public class GoalMapper {
         if (request.progress() != null) {
             goal.setProgress(request.progress());
         }
-        if (request.deadline() != null) {
-            goal.setDeadline(request.deadline());
-        }
     }
 
     public CreateGoalRes toCreateGoalRes(Goal goal){
@@ -42,7 +38,6 @@ public class GoalMapper {
                 goal.getTitle(),
                 goal.getTargetHoursPerWeek(),
                 goal.getProgress(),
-                goal.getDeadline(),
                 goal.getSubject().getId(),
                 goal.getSubject().getName()
         );

@@ -33,9 +33,6 @@ public class Goal extends AuditableEntity {
 
     private float progress;
 
-    @Column(name = "deadline")
-    private java.time.LocalDate deadline;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subject_id")
     private Subject subject;
