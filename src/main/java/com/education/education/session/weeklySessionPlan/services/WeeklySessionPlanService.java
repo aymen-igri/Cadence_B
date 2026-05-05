@@ -102,13 +102,13 @@ public class WeeklySessionPlanService {
         return subSessionMapper.toCreateSubSessionRes(saved);
     }
 
-    public List<CreateSessionRes> getAllWeeklySessionPlans(UserDetails mainUser) {
+    public List<CreateSessionRes> getAllWeeklySessionPlans(UserDetails mainUser, EPlanStatus planStatus) {
         User user = userRepository.findByUsername(mainUser.getUsername());
         if (user == null) {
             throw new IllegalArgumentException("User not found");
         }
 
-        List<WeeklySessionPlan> plans = weeklySessionPlanRepository.findByUserAndPlanStatusOrderByStartTimeDesc(user, EPlanStatus.PUBLISHED);
+        List<WeeklySessionPlan> plans = weeklySessionPlanRepository.findByUserAndPlanStatusOrderByStartTimeDesc(user, planStatus);
 
         return plans.stream().map(plan -> new CreateSessionRes(
                 weeklySessionPlanMapper.toCreateWeeklySessionRes(plan),
@@ -129,6 +129,27 @@ public class WeeklySessionPlanService {
         }
 
         weeklySessionPlanRepository.delete(weeklySessionPlan);
+    }
+
+    public CreateSessionRes approveSession(UUID sessionId, UserDetails mainUser) {
+        User user = userRepository.findByUsername(mainUser.getUsername());
+        if (user == null) {
+            throw new IllegalArgumentException("User not found");
+        }
+
+        WeeklySessionPlan weeklySessionPlan = weeklySessionPlanRepository.findById(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Weekly session plan not found"));
+
+        if (!weeklySessionPlan.getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException("You are not allowed to delete this weekly session plan");
+        }
+        
+        weeklySessionPlan.setPlanStatus(EPlanStatus.PUBLISHED);
+        WeeklySessionPlan saved = weeklySessionPlanRepository.save(weeklySessionPlan);
+
+        return new CreateSessionRes(
+                weeklySessionPlanMapper.toCreateWeeklySessionRes(saved),
+                subSessionPlanService.getSubSessionsByPlan(saved));
     }
 
     public CreateSessionRes updateWeeklySessionPlan(
@@ -260,4 +281,5 @@ public class WeeklySessionPlanService {
             throw new AccessDeniedException("You are not allowed to use this subject");
         }
     }
+
 }

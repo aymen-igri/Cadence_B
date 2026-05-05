@@ -6,6 +6,7 @@ import com.education.education.session.dto.request.UpdateSessionReq;
 import com.education.education.session.dto.response.CreateSessionRes;
 import com.education.education.session.dto.response.GenerationSessionRes;
 import com.education.education.session.services.GenerationService;
+import com.education.education.session.weeklySessionPlan.enums.EPlanStatus;
 import com.education.education.session.weeklySessionPlan.services.WeeklySessionPlanService;
 import com.education.education.session.subSession.dto.request.UpdateSubSessionStatusReq;
 import com.education.education.session.subSession.dto.response.CreateSubSessionRes;
@@ -53,10 +54,18 @@ public class SessionController {
         return ResponseEntity.ok(generationService.generateSession(sessionReq, userDetails));
     }
 
-    @GetMapping("/all")
-    public ResponseEntity<List<CreateSessionRes>> getAllWeeklySessionPlans(
+    @PatchMapping("/approve/{sessionId}")
+    public ResponseEntity<CreateSessionRes> approveSession(
+            @PathVariable UUID sessionId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(weeklySessionPlanService.getAllWeeklySessionPlans(userDetails));
+        return ResponseEntity.ok(weeklySessionPlanService.approveSession(sessionId, userDetails));
+    }
+
+    @GetMapping("/all/{planStatus}")
+    public ResponseEntity<List<CreateSessionRes>> getAllWeeklySessionPlans(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable EPlanStatus planStatus) {
+        return ResponseEntity.ok(weeklySessionPlanService.getAllWeeklySessionPlans(userDetails, planStatus));
     }
 
     @PatchMapping("/update/{sessionId}")
@@ -66,7 +75,7 @@ public class SessionController {
             @Valid @RequestBody UpdateSessionReq request) {
         return ResponseEntity.ok(weeklySessionPlanService.updateWeeklySessionPlan(sessionId, request, userDetails));
     }
-
+    
     @DeleteMapping("/delete/{sessionId}")
     public ResponseEntity<Void> deleteWeeklySessionPlan(
             @PathVariable UUID sessionId,
