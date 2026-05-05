@@ -29,6 +29,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.UUID;
 
+
+
 @RestController
 @RequestMapping("/session")
 @PreAuthorize("hasRole('GENERAL_USER')")
@@ -46,6 +48,14 @@ public class SessionController {
         return ResponseEntity.ok(weeklySessionPlanService.createWeeklySessionPlan(userDetails,
                 sessionReq.weeklySession(), sessionReq.subSessions()));
     }
+
+    @GetMapping("/details/{sessionId}")
+    public ResponseEntity<CreateSessionRes> getWeeklySession(
+            @PathVariable UUID sessionId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(weeklySessionPlanService.getWeeklySessionWeekly(sessionId, userDetails));
+    }
+    
 
     @PostMapping("/generate")
     public ResponseEntity<GenerationSessionRes> generateSession(

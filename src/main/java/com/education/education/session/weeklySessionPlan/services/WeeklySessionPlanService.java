@@ -143,13 +143,31 @@ public class WeeklySessionPlanService {
         if (!weeklySessionPlan.getUser().getId().equals(user.getId())) {
             throw new AccessDeniedException("You are not allowed to delete this weekly session plan");
         }
-        
+
         weeklySessionPlan.setPlanStatus(EPlanStatus.PUBLISHED);
         WeeklySessionPlan saved = weeklySessionPlanRepository.save(weeklySessionPlan);
 
         return new CreateSessionRes(
                 weeklySessionPlanMapper.toCreateWeeklySessionRes(saved),
                 subSessionPlanService.getSubSessionsByPlan(saved));
+    }
+
+    public CreateSessionRes getWeeklySessionWeekly(UUID sessionId, UserDetails mainUser) {
+        User user = userRepository.findByUsername(mainUser.getUsername());
+        if (user == null) {
+            throw new IllegalArgumentException("User not found");
+        }
+
+        WeeklySessionPlan weeklySessionPlan = weeklySessionPlanRepository.findById(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Weekly session plan not found"));
+
+        if (!weeklySessionPlan.getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException("You are not allowed to delete this weekly session plan");
+        }
+
+        return new CreateSessionRes(
+                weeklySessionPlanMapper.toCreateWeeklySessionRes(weeklySessionPlan),
+                subSessionPlanService.getSubSessionsByPlan(weeklySessionPlan));
     }
 
     public CreateSessionRes updateWeeklySessionPlan(
