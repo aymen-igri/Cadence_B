@@ -22,11 +22,10 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.education.education.session.subSession.dto.request.UpdateSubSessionStatusReq;
 import com.education.education.session.subSession.enums.ESubSessionStatus;
+import com.education.education.session.weeklySessionPlan.enums.EPlanStatus;
 import com.education.education.session.weeklySessionPlan.enums.ESessionStatus;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -109,7 +108,7 @@ public class WeeklySessionPlanService {
             throw new IllegalArgumentException("User not found");
         }
 
-        List<WeeklySessionPlan> plans = weeklySessionPlanRepository.findByUserOrderByStartTimeDesc(user);
+        List<WeeklySessionPlan> plans = weeklySessionPlanRepository.findByUserAndPlanStatusOrderByStartTimeDesc(user, EPlanStatus.PUBLISHED);
 
         return plans.stream().map(plan -> new CreateSessionRes(
                 weeklySessionPlanMapper.toCreateWeeklySessionRes(plan),

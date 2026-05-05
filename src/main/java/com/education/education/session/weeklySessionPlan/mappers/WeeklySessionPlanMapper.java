@@ -4,6 +4,8 @@ import com.education.education.session.weeklySessionPlan.dto.request.CreateWeekl
 import com.education.education.session.weeklySessionPlan.dto.request.UpdateWeeklySessionReq;
 import com.education.education.session.weeklySessionPlan.dto.response.CreateWeeklySessionRes;
 import com.education.education.session.weeklySessionPlan.entities.WeeklySessionPlan;
+import com.education.education.session.weeklySessionPlan.enums.EPlanStatus;
+
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +19,7 @@ public class WeeklySessionPlanMapper {
         WeeklySessionPlan weeklySessionPlan = new WeeklySessionPlan();
         weeklySessionPlan.setTitle(request.title());
         weeklySessionPlan.setStartTime(request.startTime());
+        weeklySessionPlan.setPlanStatus(EPlanStatus.PUBLISHED);
 
         return weeklySessionPlan;
     }
