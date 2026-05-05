@@ -4,11 +4,13 @@ import com.education.education.user.role.dto.request.AddRoleToUserRequest;
 import com.education.education.user.role.services.RoleService;
 import com.education.education.user.user.dto.request.AddUserRequest;
 import com.education.education.user.user.dto.response.AddUserResponse;
+import com.education.education.user.user.dto.response.UserProfileRes;
 import com.education.education.user.user.entities.User;
 import com.education.education.user.user.mappers.UserMapper;
 import com.education.education.user.user.repositories.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -45,5 +47,10 @@ public class UserService {
         roleService.addRoleToUser(addRoleToUserRequest);
 
         return addUserResponse;
+    }
+
+    public UserProfileRes profile(UserDetails userDetails){
+        User user = userRepository.findByUsername(userDetails.getUsername());
+        return userMapper.toUserProfile(user);
     }
 }
