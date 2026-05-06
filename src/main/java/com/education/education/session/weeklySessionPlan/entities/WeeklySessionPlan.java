@@ -2,6 +2,7 @@ package com.education.education.session.weeklySessionPlan.entities;
 
 import com.education.education.availability.availabilityPlan.entities.AvailabilityPlan;
 import com.education.education.base.auditableEntity.AuditableEntity;
+import com.education.education.session.task.entities.Task;
 import com.education.education.session.weeklySessionPlan.enums.EGenerationAlgoType;
 import com.education.education.session.weeklySessionPlan.enums.EGenerationType;
 import com.education.education.session.weeklySessionPlan.enums.EPlanStatus;
@@ -66,4 +67,7 @@ public class WeeklySessionPlan extends AuditableEntity {
 
     @OneToMany(mappedBy = "weeklySessionPlan", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SubSession> subSessions;
+
+    @OneToMany(mappedBy = "weeklySessionPlan", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Task> createdTasks;
 }

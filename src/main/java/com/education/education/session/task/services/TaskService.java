@@ -1,13 +1,13 @@
-package com.education.education.goal.task.services;
+package com.education.education.session.task.services;
 
-import com.education.education.goal.entities.Goal;
-import com.education.education.goal.repositories.GoalRepository;
-import com.education.education.goal.task.dto.request.CreateTaskReq;
-import com.education.education.goal.task.dto.request.UpdateTaskReq;
-import com.education.education.goal.task.dto.response.CreateTaskRes;
-import com.education.education.goal.task.entities.Task;
-import com.education.education.goal.task.mappers.TaskMapper;
-import com.education.education.goal.task.repository.TaskRepository;
+import com.education.education.session.task.dto.request.CreateTaskReq;
+import com.education.education.session.task.dto.request.UpdateTaskReq;
+import com.education.education.session.task.dto.response.CreateTaskRes;
+import com.education.education.session.task.entities.Task;
+import com.education.education.session.task.mappers.TaskMapper;
+import com.education.education.session.task.repository.TaskRepository;
+import com.education.education.session.weeklySessionPlan.entities.WeeklySessionPlan;
+import com.education.education.session.weeklySessionPlan.repositories.WeeklySessionPlanRepository;
 import com.education.education.user.user.entities.User;
 import com.education.education.user.user.repositories.UserRepository;
 import lombok.AllArgsConstructor;
@@ -25,28 +25,29 @@ import java.util.UUID;
 public class TaskService {
 
     private final TaskRepository taskRepository;
-    private final GoalRepository goalRepository;
+    private final WeeklySessionPlanRepository weeklySessionPlanRepository;
     private final UserRepository userRepository;
     private final TaskMapper taskMapper;
+
 
     public CreateTaskRes createTask(
             UserDetails mainUser,
             CreateTaskReq request,
-            UUID goalId
+            UUID weeklySessionId
     ){
         User user = userRepository.findByUsername(mainUser.getUsername());
         if (user == null) {
             throw new IllegalArgumentException("User not found");
         }
 
-        Goal goal = goalRepository.findById(goalId)
-                .orElseThrow(() -> new IllegalArgumentException("Goal not found"));
+        WeeklySessionPlan weeklySessionPlan = weeklySessionPlanRepository.findById(weeklySessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Weekly session plan not found"));
 
-        if (!goal.getUser().getId().equals(user.getId())) {
-            throw new AccessDeniedException("You are not allowed to create a task for this goal");
+        if (!weeklySessionPlan.getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException("You are not allowed to create a task for this weekly session plan");
         }
 
-        Task newTask = taskMapper.toTask(request, goal);
+        Task newTask = taskMapper.toTask(request, weeklySessionPlan);
         Task savedTask = taskRepository.save(newTask);
 
         return taskMapper.toCreateTaskRes(savedTask);
@@ -65,7 +66,7 @@ public class TaskService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found"));
 
-        if (!task.getGoal().getUser().getId().equals(user.getId())) {
+        if (!task.getWeeklySessionPlan().getUser().getId().equals(user.getId())) {
             throw new AccessDeniedException("You are not allowed to update this task");
         }
 
@@ -84,14 +85,14 @@ public class TaskService {
             throw new IllegalArgumentException("User not found");
         }
 
-        Goal goal = goalRepository.findById(goalId)
+        WeeklySessionPlan weeklySessionPlan = weeklySessionPlanRepository.findById(goalId)
                 .orElseThrow(() -> new IllegalArgumentException("Goal not found"));
 
-        if (!goal.getUser().getId().equals(user.getId())) {
+        if (!weeklySessionPlan.getUser().getId().equals(user.getId())) {
             throw new AccessDeniedException("You are not allowed to view tasks for this goal");
         }
 
-        List<Task> tasks = taskRepository.findByGoal(goal);
+        List<Task> tasks = taskRepository.findByWeeklySessionPlan(weeklySessionPlan);
 
         return tasks.stream()
                 .map(taskMapper::toCreateTaskRes)
@@ -107,8 +108,8 @@ public class TaskService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found"));
 
-        Goal goal = task.getGoal();
-        if (!goal.getUser().getId().equals(user.getId())) {
+        WeeklySessionPlan weeklySessionPlan = task.getWeeklySessionPlan();
+        if (!weeklySessionPlan.getUser().getId().equals(user.getId())) {
             throw new AccessDeniedException("You are not allowed to delete this task");
         }
 

@@ -1,7 +1,7 @@
-package com.education.education.goal.task.entities;
+package com.education.education.session.task.entities;
 
-import com.education.education.goal.entities.Goal;
-import com.education.education.goal.task.enums.ETask;
+import com.education.education.session.task.enums.ETask;
+import com.education.education.session.weeklySessionPlan.entities.WeeklySessionPlan;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -33,6 +33,6 @@ public class Task {
     private ETask status;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "goal_id")
-    private Goal goal;
+    @JoinColumn(name = "session_id")
+    private WeeklySessionPlan weeklySessionPlan;
 }

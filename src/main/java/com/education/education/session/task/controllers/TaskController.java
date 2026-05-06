@@ -1,9 +1,9 @@
-package com.education.education.goal.task.controllers;
+package com.education.education.session.task.controllers;
 
-import com.education.education.goal.task.dto.request.CreateTaskReq;
-import com.education.education.goal.task.dto.request.UpdateTaskReq;
-import com.education.education.goal.task.dto.response.CreateTaskRes;
-import com.education.education.goal.task.services.TaskService;
+import com.education.education.session.task.dto.request.CreateTaskReq;
+import com.education.education.session.task.dto.request.UpdateTaskReq;
+import com.education.education.session.task.dto.response.CreateTaskRes;
+import com.education.education.session.task.services.TaskService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
