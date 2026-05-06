@@ -53,4 +53,12 @@ public class UserService {
         User user = userRepository.findByUsername(userDetails.getUsername());
         return userMapper.toUserProfile(user);
     }
+
+    public void updatePFP(UserDetails userDetails, String imageURL){
+        User user = userRepository.findByUsername(userDetails.getUsername());
+        if (user == null) throw new IllegalArgumentException("User not found");
+
+        user.setProfilePic(imageURL);
+        userRepository.save(user);
+    }
 }
