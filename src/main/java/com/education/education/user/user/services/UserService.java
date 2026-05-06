@@ -3,7 +3,9 @@ package com.education.education.user.user.services;
 import com.education.education.user.role.dto.request.AddRoleToUserRequest;
 import com.education.education.user.role.services.RoleService;
 import com.education.education.user.user.dto.request.AddUserRequest;
+import com.education.education.user.user.dto.request.UpdateUserDataReq;
 import com.education.education.user.user.dto.response.AddUserResponse;
+import com.education.education.user.user.dto.response.UpdateUserDataRes;
 import com.education.education.user.user.dto.response.UserProfileRes;
 import com.education.education.user.user.entities.User;
 import com.education.education.user.user.mappers.UserMapper;
@@ -47,6 +49,12 @@ public class UserService {
         roleService.addRoleToUser(addRoleToUserRequest);
 
         return addUserResponse;
+    }
+
+    public UpdateUserDataRes updateUserData(UserDetails userDetails, UpdateUserDataReq req){
+        User user = userMapper.toUser(userDetails, req);
+        userRepository.save(user);
+        return userMapper.toUpdateUserDataRes(user);
     }
 
     public UserProfileRes profile(UserDetails userDetails){
