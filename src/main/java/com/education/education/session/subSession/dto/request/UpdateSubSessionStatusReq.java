@@ -4,5 +4,7 @@ import com.education.education.session.subSession.enums.ESubSessionStatus;
 import jakarta.validation.constraints.NotNull;
 
 public record UpdateSubSessionStatusReq(
-        @NotNull(message = "Status is required") ESubSessionStatus status) {
+        @NotNull(message = "Status is required")
+        ESubSessionStatus status
+) {
 }
