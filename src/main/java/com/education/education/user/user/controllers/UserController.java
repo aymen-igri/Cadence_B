@@ -4,6 +4,7 @@ import com.education.education.user.user.dto.request.AddUserRequest;
 import com.education.education.user.user.dto.request.UpdateUserDataReq;
 import com.education.education.user.user.dto.response.AddUserResponse;
 import com.education.education.user.user.dto.response.UpdateUserDataRes;
+import com.education.education.user.user.dto.response.UserProfileRes;
 import com.education.education.user.user.services.ImageService;
 import com.education.education.user.user.services.UserService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -46,7 +47,7 @@ public class UserController {
 
     @GetMapping("/profile")
     @PreAuthorize("hasAnyRole('GENERAL_USER', 'ADMIN')")
-    public ResponseEntity<?> profile(
+    public ResponseEntity<UserProfileRes> profile(
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         return ResponseEntity.ok(userService.profile(userDetails));
