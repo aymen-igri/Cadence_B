@@ -6,6 +6,9 @@ import com.education.education.session.dto.request.UpdateSessionReq;
 import com.education.education.session.dto.response.CreateSessionRes;
 import com.education.education.session.dto.response.GenerationSessionRes;
 import com.education.education.session.services.GenerationService;
+import com.education.education.session.sharedSession.DTO.ShareSessionRequest;
+import com.education.education.session.sharedSession.DTO.SharedSessionRes;
+import com.education.education.session.sharedSession.services.SharedSessionService;
 import com.education.education.session.weeklySessionPlan.enums.EPlanStatus;
 import com.education.education.session.weeklySessionPlan.services.WeeklySessionPlanService;
 import com.education.education.session.subSession.dto.request.UpdateSubSessionStatusReq;
@@ -29,8 +32,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.UUID;
 
-
-
 @RestController
 @RequestMapping("/session")
 @PreAuthorize("hasRole('GENERAL_USER')")
@@ -40,6 +41,7 @@ public class SessionController {
 
     private final WeeklySessionPlanService weeklySessionPlanService;
     private final GenerationService generationService;
+    private final SharedSessionService sharedSessionService;
 
     @PostMapping("/create")
     public ResponseEntity<CreateSessionRes> createSession(
@@ -55,7 +57,6 @@ public class SessionController {
             @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(weeklySessionPlanService.getWeeklySessionWeekly(sessionId, userDetails));
     }
-    
 
     @PostMapping("/generate")
     public ResponseEntity<GenerationSessionRes> generateSession(
@@ -85,7 +86,7 @@ public class SessionController {
             @Valid @RequestBody UpdateSessionReq request) {
         return ResponseEntity.ok(weeklySessionPlanService.updateWeeklySessionPlan(sessionId, request, userDetails));
     }
-    
+
     @DeleteMapping("/delete/{sessionId}")
     public ResponseEntity<Void> deleteWeeklySessionPlan(
             @PathVariable UUID sessionId,
@@ -109,5 +110,29 @@ public class SessionController {
         } catch (org.springframework.security.access.AccessDeniedException e) {
             return ResponseEntity.status(403).body(e.getMessage());
         }
+    }
+
+    @PostMapping("/share")
+    public ResponseEntity<SharedSessionRes> shareSession(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody ShareSessionRequest request) {
+        SharedSessionRes res = sharedSessionService.shareSession(request, userDetails.getUsername());
+        return ResponseEntity.ok(res);
+    }
+
+    @GetMapping("/shared/{groupId}")
+    public ResponseEntity<List<SharedSessionRes>> getSharedSessions(
+            @PathVariable UUID groupId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(sharedSessionService.getSharedSessionsForGroup(groupId, userDetails.getUsername()));
+    }
+
+    @DeleteMapping("/{sessionId}/share/{groupId}")
+    public ResponseEntity<Void> unshareSession(
+            @PathVariable UUID sessionId,
+            @PathVariable UUID groupId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        sharedSessionService.unshareSession(sessionId, groupId, userDetails.getUsername());
+        return ResponseEntity.noContent().build();
     }
 }
