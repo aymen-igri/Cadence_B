@@ -1,5 +1,6 @@
 package com.education.education.user.passwordResetToken.dto.request;
 
+import com.education.education.auth.enums.EMfaType;
 import jakarta.validation.constraints.NotNull;
 
 public record PasswordUpdateReq(
@@ -7,6 +8,10 @@ public record PasswordUpdateReq(
         String oldPassword,
 
         @NotNull(message = "new password is required")
-        String newPassword
+        String newPassword,
+
+        String code,
+
+        EMfaType type
 ) {
 }

@@ -38,16 +38,21 @@ public class EmailService {
         }
     }
 
-    private void sendHtmlEmail(String to, String subject, String htmlBody) throws MessagingException {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+    public void sendPasswordResetEmail(String email,String firstName , String resetToken) {;
+        try {
+            Context context = new Context();
+            context.setVariable("firstName", firstName);
 
-        helper.setFrom(fromEmail);
-        helper.setTo(to);
-        helper.setSubject(subject);
-        helper.setText(htmlBody, true);
+            String resetLink = "http://localhost:4200/reset-password?token=" + resetToken;
+            context.setVariable("resetLink", resetLink);
 
-        mailSender.send(message);
+            String htmlContent = templateEngine.process("password-reset", context);
+
+            sendHtmlEmail(email, "Password Reset Request - Study Platform", htmlContent);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to send password reset email to: " + email, e);
+        }
     }
 
     public void sendPlainTextEmail(String to, String subject, String body) throws MessagingException {
@@ -68,6 +73,18 @@ public class EmailService {
 
         helper.setFrom(fromEmail);
         helper.setBcc(recipients);
+        helper.setSubject(subject);
+        helper.setText(htmlBody, true);
+
+        mailSender.send(message);
+    }
+
+    private void sendHtmlEmail(String to, String subject, String htmlBody) throws MessagingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+        helper.setFrom(fromEmail);
+        helper.setTo(to);
         helper.setSubject(subject);
         helper.setText(htmlBody, true);
 
