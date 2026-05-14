@@ -13,6 +13,7 @@ import com.education.education.session.weeklySessionPlan.enums.EPlanStatus;
 import com.education.education.session.weeklySessionPlan.services.WeeklySessionPlanService;
 import com.education.education.session.subSession.dto.request.UpdateSubSessionStatusReq;
 import com.education.education.session.subSession.dto.response.CreateSubSessionRes;
+import com.education.education.session.subSession.dto.response.MissedSubSessionRes;
 import com.education.education.exeption.PastWeekException;
 import com.education.education.exeption.WeeklySessionAlreadyExistsException;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -154,5 +155,12 @@ public class SessionController {
         response.put("error", error);
         response.put("message", message);
         return response;
+    }
+
+    @GetMapping("/{sessionId}/missed")
+    public ResponseEntity<List<MissedSubSessionRes>> getMissedSubSessions(
+            @PathVariable UUID sessionId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(weeklySessionPlanService.getMissedSubSessions(sessionId, userDetails));
     }
 }

@@ -5,6 +5,7 @@ import com.education.education.session.dto.response.CreateSessionRes;
 import com.education.education.session.subSession.dto.request.CreateSubSessionReq;
 import com.education.education.session.subSession.dto.request.UpdateSubSessionReq;
 import com.education.education.session.subSession.dto.response.CreateSubSessionRes;
+import com.education.education.session.subSession.dto.response.MissedSubSessionRes;
 import com.education.education.session.subSession.entities.SubSession;
 import com.education.education.session.subSession.mappers.SubSessionMapper;
 import com.education.education.session.subSession.repositories.SubSessionRepository;
@@ -191,6 +192,32 @@ public class WeeklySessionPlanService {
         return new CreateSessionRes(
                 weeklySessionPlanMapper.toCreateWeeklySessionRes(weeklySessionPlan),
                 subSessionPlanService.getSubSessionsByPlan(weeklySessionPlan));
+    }
+
+    public List<MissedSubSessionRes> getMissedSubSessions(UUID sessionId, UserDetails mainUser) {
+        User user = userRepository.findByUsername(mainUser.getUsername());
+        if (user == null) {
+            throw new IllegalArgumentException("User not found");
+        }
+
+        WeeklySessionPlan weeklySessionPlan = weeklySessionPlanRepository.findById(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Weekly session plan not found"));
+
+        if (!weeklySessionPlan.getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException("You are not allowed to view this weekly session plan");
+        }
+
+        return subSessionRepository.findByWeeklySessionPlanOrderByStartTimeAsc(weeklySessionPlan).stream()
+                .filter(subSession -> subSession.getSubSessionStatus() == ESubSessionStatus.INCOMPLETED
+                        || subSession.getSubSessionStatus() == ESubSessionStatus.CLOSED)
+                .map(subSession -> new MissedSubSessionRes(
+                        subSession.getId(),
+                        subSession.getSubject().getId(),
+                        subSession.getSubject().getName(),
+                        subSession.getDayOfWeek(),
+                        subSession.getStartTime(),
+                        subSession.getEndTime()))
+                .toList();
     }
 
     public CreateSessionRes updateWeeklySessionPlan(
