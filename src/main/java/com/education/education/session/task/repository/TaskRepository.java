@@ -1,6 +1,5 @@
 package com.education.education.session.task.repository;
 
-import com.education.education.goal.entities.Goal;
 import com.education.education.session.task.entities.Task;
 import com.education.education.session.weeklySessionPlan.entities.WeeklySessionPlan;
 import org.springframework.data.jpa.repository.JpaRepository;

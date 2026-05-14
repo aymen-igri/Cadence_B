@@ -15,7 +15,7 @@ public class ImageService {
     private final Cloudinary cloudinary;
 
     public String uploadeImage(MultipartFile file) throws Exception {
-        Map uploadResult = cloudinary.uploader().upload(
+        Map<?, ?> uploadResult = cloudinary.uploader().upload(
                 file.getBytes(),
                 ObjectUtils.asMap("folder", "profile_pic")
         );

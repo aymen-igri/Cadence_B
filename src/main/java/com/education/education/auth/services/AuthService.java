@@ -7,7 +7,6 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.education.education.auth.deo.responses.SignUpDTOResponse;
 import com.education.education.auth.utils.AuthUtils;
 import com.education.education.user.role.entities.Role;
-import com.education.education.user.role.services.RoleService;
 import com.education.education.user.user.dto.request.AddUserRequest;
 import com.education.education.user.user.dto.response.AddUserResponse;
 import com.education.education.user.user.entities.User;
@@ -32,7 +31,6 @@ public class AuthService {
     private final UserRepository userRepository;
     private final AuthUtils authUtils;
     private final UserService userService;
-    private final RoleService roleService;
 
     public SignUpDTOResponse signUp(AddUserRequest request){
         AddUserResponse addUserResponse = userService.createUser(request, "ROLE_GENERAL_USER");

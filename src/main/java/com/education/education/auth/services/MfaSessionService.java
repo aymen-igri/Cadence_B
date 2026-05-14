@@ -4,7 +4,6 @@ import com.education.education.auth.utils.AuthUtils;
 import com.education.education.auth.utils.MFAUtils;
 import com.education.education.email.services.EmailService;
 import com.education.education.auth.deo.responses.SignUpDTOResponse;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import com.education.education.user.user.entities.User;
 import com.education.education.user.user.repositories.UserRepository;
@@ -12,8 +11,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import com.education.education.auth.entities.MfaSession;
 import com.education.education.auth.enums.EMfaType;
 import org.jboss.aerogear.security.otp.Totp;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.education.education.auth.repositories.MfaSessionRepository;
 
@@ -29,12 +26,9 @@ import lombok.AllArgsConstructor;
 @Transactional
 public class MfaSessionService {
     
-    private static final Logger logger = LoggerFactory.getLogger(MfaSessionService.class);
-    
     private final MfaSessionRepository mfaSessionRepository;
     private final UserRepository userRepository;
     private final AuthUtils authUtils;
-    private final JavaMailSender mailSender;
     private final EmailService emailService;
     
     public boolean verifySessionCode(UserDetails userdetails, String code, EMfaType type){

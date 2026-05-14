@@ -5,8 +5,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-import java.util.UUID;
-
 public record UpdateUserDataReq(
         @NotBlank(message = "First name is required")
         @Size(min = 3, message = "First name should contain at least 2 characters")

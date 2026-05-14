@@ -1,6 +1,5 @@
 package com.education.education.user.passwordResetToken.services;
 
-import com.education.education.auth.enums.EMfaType;
 import com.education.education.auth.services.MfaSessionService;
 import com.education.education.email.services.EmailService;
 import com.education.education.user.passwordResetToken.dto.request.PasswordUpdateReq;

@@ -13,9 +13,6 @@ import lombok.AllArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import com.education.education.user.role.entities.Role;
-
-import java.util.UUID;
 
 @Component
 @AllArgsConstructor
