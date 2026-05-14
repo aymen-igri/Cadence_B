@@ -13,6 +13,8 @@ import com.education.education.session.weeklySessionPlan.enums.EPlanStatus;
 import com.education.education.session.weeklySessionPlan.services.WeeklySessionPlanService;
 import com.education.education.session.subSession.dto.request.UpdateSubSessionStatusReq;
 import com.education.education.session.subSession.dto.response.CreateSubSessionRes;
+import com.education.education.exeption.PastWeekException;
+import com.education.education.exeption.WeeklySessionAlreadyExistsException;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -29,7 +31,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -44,11 +49,17 @@ public class SessionController {
     private final SharedSessionService sharedSessionService;
 
     @PostMapping("/create")
-    public ResponseEntity<CreateSessionRes> createSession(
+    public ResponseEntity<?> createSession(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody CreateSessionReq sessionReq) {
-        return ResponseEntity.ok(weeklySessionPlanService.createWeeklySessionPlan(userDetails,
-                sessionReq.weeklySession(), sessionReq.subSessions()));
+        try {
+            return ResponseEntity.ok(weeklySessionPlanService.createWeeklySessionPlan(userDetails,
+                    sessionReq.weeklySession(), sessionReq.subSessions()));
+        } catch (WeeklySessionAlreadyExistsException ex) {
+            return ResponseEntity.status(409).body(buildErrorResponse(409, "Conflict", ex.getMessage()));
+        } catch (PastWeekException ex) {
+            return ResponseEntity.badRequest().body(buildErrorResponse(400, "Bad Request", ex.getMessage()));
+        }
     }
 
     @GetMapping("/details/{sessionId}")
@@ -134,5 +145,14 @@ public class SessionController {
             @AuthenticationPrincipal UserDetails userDetails) {
         sharedSessionService.unshareSession(sessionId, groupId, userDetails.getUsername());
         return ResponseEntity.noContent().build();
+    }
+
+    private Map<String, Object> buildErrorResponse(int status, String error, String message) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", status);
+        response.put("error", error);
+        response.put("message", message);
+        return response;
     }
 }

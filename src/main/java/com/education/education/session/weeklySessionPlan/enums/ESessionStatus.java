@@ -1,7 +1,9 @@
 package com.education.education.session.weeklySessionPlan.enums;
 
 public enum ESessionStatus {
-    PENDING,
+    UPCOMING,
+    ACTIVE,
+    INCOMPLETED,
     COMPLETED,
     CLOSED
 }

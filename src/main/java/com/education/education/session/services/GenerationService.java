@@ -21,18 +21,22 @@ import com.education.education.session.weeklySessionPlan.enums.EGenerationType;
 import com.education.education.session.weeklySessionPlan.enums.EPlanStatus;
 import com.education.education.session.weeklySessionPlan.enums.ESessionStatus;
 import com.education.education.session.weeklySessionPlan.repositories.WeeklySessionPlanRepository;
+import com.education.education.session.weeklySessionPlan.services.WeeklySessionPlanService;
 import com.education.education.user.user.entities.User;
 import com.education.education.user.user.repositories.UserRepository;
+import com.education.education.exeption.PastWeekException;
+import com.education.education.exeption.WeeklySessionAlreadyExistsException;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-
 
 @Service
 @Transactional
@@ -44,28 +48,37 @@ public class GenerationService {
     private final WeeklySessionPlanRepository weeklySessionPlanRepository;
     private final SubSessionRepository subSessionRepository;
     private final GenerationMapper generationMapper;
+    private final WeeklySessionPlanService weeklySessionPlanService;
 
     public GenerationSessionRes generateSession(
             GenerationSessionReq req,
-            UserDetails mainUser
-    ){
+            UserDetails mainUser) {
         User user = userRepository.findByUsername(mainUser.getUsername());
 
         GenerationData data = generationMapper.toGenerationData(req);
         List<Goal> goals = data.goals();
         AvailabilityPlan availabilityPlan = data.availabilityPlan();
         LocalDateTime weekStartDate = data.weekStartDate();
+        int weekYear = weekStartDate.get(WeekFields.ISO.weekBasedYear());
+        int weekNumber = weekStartDate.get(WeekFields.ISO.weekOfWeekBasedYear());
+
+        validateWeekIsCurrentOrFuture(weekStartDate);
+
+        if (weeklySessionPlanRepository.existsByUser_IdAndWeekYearAndWeekNumber(user.getId(), weekYear, weekNumber)) {
+            throw new WeeklySessionAlreadyExistsException(weekYear, weekNumber);
+        }
 
         WeeklySessionPlan newWeeklySessionPlan = new WeeklySessionPlan();
         newWeeklySessionPlan.setUser(user);
-        newWeeklySessionPlan.setStartTime(weekStartDate);
-        newWeeklySessionPlan.setSessionStatus(ESessionStatus.PENDING);
+        newWeeklySessionPlan.setWeekYear(weekYear);
+        newWeeklySessionPlan.setWeekNumber(weekNumber);
+        newWeeklySessionPlan.setSessionStatus(ESessionStatus.UPCOMING);
         newWeeklySessionPlan.setPlanStatus(EPlanStatus.DRAFT);
         newWeeklySessionPlan.setGenerationType(EGenerationType.AUTO_GENERATED);
         newWeeklySessionPlan.setAvailabilityPlan(availabilityPlan);
         newWeeklySessionPlan.setTitle(req.title());
 
-        if (req.usePriority()){
+        if (req.usePriority()) {
             newWeeklySessionPlan.setGenerationAlgoType(EGenerationAlgoType.PRIORITY_FIRST);
         } else {
             newWeeklySessionPlan.setGenerationAlgoType(EGenerationAlgoType.DENSITY_FIRST);
@@ -73,20 +86,24 @@ public class GenerationService {
 
         WeeklySessionPlan savedPlan = weeklySessionPlanRepository.save(newWeeklySessionPlan);
 
-        List<AvailabilitySlot> availabilitySlots = availabilitySlotRepository.findAllByAvailabilityPlan(availabilityPlan);
+        List<AvailabilitySlot> availabilitySlots = availabilitySlotRepository
+                .findAllByAvailabilityPlan(availabilityPlan);
 
         EngineResult engineResult = FFD_Alg(
                 goals,
                 availabilitySlots,
                 newWeeklySessionPlan,
-                req.usePriority()
-        );
+                req.usePriority());
+
+        validateGeneratedSubSessions(savedPlan, engineResult.subSessions());
 
         savedPlan.setPenaltyPoints(engineResult.penaltyPoints());
         weeklySessionPlanRepository.save(savedPlan);
+        weeklySessionPlanService.deriveStatus(savedPlan);
 
         List<CreateSubSessionRes> subSessionRes = new ArrayList<>();
-        engineResult.subSessions().forEach(subSession -> {;
+        engineResult.subSessions().forEach(subSession -> {
+            ;
             subSessionRes.add(
                     new CreateSubSessionRes(
                             subSession.getId(),
@@ -95,43 +112,74 @@ public class GenerationService {
                             subSession.getEndTime(),
                             subSession.getSubSessionStatus(),
                             subSession.getSubject().getId(),
-                            subSession.getSubject().getName()
-                    )
-            );
+                            subSession.getSubject().getName()));
         });
 
         return generationMapper.toGeneratedSession(
                 new CreateSessionRes(
                         new CreateWeeklySessionRes(
                                 savedPlan.getId(),
-                                savedPlan.getStartTime(),
+                                savedPlan.getWeekYear(),
+                                savedPlan.getWeekNumber(),
                                 savedPlan.getTitle(),
-                                savedPlan.getSessionStatus()
-                        ),
-                        subSessionRes
-                ),
+                                savedPlan.getSessionStatus()),
+                        subSessionRes),
                 savedPlan.getPlanStatus(),
-                savedPlan.getPenaltyPoints()
-        );
+                savedPlan.getPenaltyPoints());
+    }
+
+    private void validateWeekIsCurrentOrFuture(LocalDateTime weekStartDate) {
+        WeekFields weekFields = WeekFields.ISO;
+        LocalDate today = LocalDate.now();
+        int currentWeekYear = today.get(weekFields.weekBasedYear());
+        int currentWeekNumber = today.get(weekFields.weekOfWeekBasedYear());
+
+        int targetWeekYear = weekStartDate.get(weekFields.weekBasedYear());
+        int targetWeekNumber = weekStartDate.get(weekFields.weekOfWeekBasedYear());
+
+        boolean isPastWeek = targetWeekYear < currentWeekYear
+                || (targetWeekYear == currentWeekYear && targetWeekNumber < currentWeekNumber);
+
+        if (isPastWeek) {
+            throw new PastWeekException(targetWeekYear, targetWeekNumber);
+        }
+    }
+
+    private void validateGeneratedSubSessions(WeeklySessionPlan weeklySessionPlan,
+            List<SubSession> generatedSubSessions) {
+        for (int i = 0; i < generatedSubSessions.size(); i++) {
+            SubSession current = generatedSubSessions.get(i);
+            for (int j = i + 1; j < generatedSubSessions.size(); j++) {
+                SubSession candidate = generatedSubSessions.get(j);
+                if (!current.getDayOfWeek().equals(candidate.getDayOfWeek())) {
+                    continue;
+                }
+
+                boolean overlaps = current.getStartTime().isBefore(candidate.getEndTime())
+                        && candidate.getStartTime().isBefore(current.getEndTime());
+                if (overlaps) {
+                    throw new IllegalStateException("Generated sub-sessions overlap for weekly session "
+                            + weeklySessionPlan.getId());
+                }
+            }
+        }
     }
 
     public EngineResult FFD_Alg(
             List<Goal> goals,
             List<AvailabilitySlot> availabilitySlots,
             WeeklySessionPlan plan,
-            boolean usePriority
-    ){
+            boolean usePriority) {
 
         // sorting section based on the user choise
         if (usePriority) {
             // sorting goals by priority then by duration
             goals.sort(Comparator.comparing((Goal g) -> g.getSubject().getPriority())
                     .thenComparing(Goal::getTargetHoursPerWeek, Comparator.reverseOrder()));
-        }else {
+        } else {
             // sorting goals by duration
             goals.sort(Comparator.comparing(Goal::getTargetHoursPerWeek).reversed());
         }
-
 
         // sorting availability slots by date
         availabilitySlots.sort(Comparator.comparing(AvailabilitySlot::getDayOfWeek)
@@ -143,19 +191,20 @@ public class GenerationService {
         int currentGoalIdx = 0;
         int currentASlotIdx = 0;
 
-        long currentGoalMinutes = (currentGoalIdx < goals.size()) ? (long)(goals.get(currentGoalIdx).getTargetHoursPerWeek() * 60) : 0;
+        long currentGoalMinutes = (currentGoalIdx < goals.size())
+                ? (long) (goals.get(currentGoalIdx).getTargetHoursPerWeek() * 60)
+                : 0;
         long currentASlotMinutes = (currentASlotIdx < availabilitySlots.size()) ? Duration.between(
                 availabilitySlots.get(currentASlotIdx).getStartTime(),
-                availabilitySlots.get(currentASlotIdx).getEndTime()
-        ).toMinutes() : 0;
+                availabilitySlots.get(currentASlotIdx).getEndTime()).toMinutes() : 0;
 
-        while(currentGoalIdx < goals.size() && currentASlotIdx < availabilitySlots.size()){
+        while (currentGoalIdx < goals.size() && currentASlotIdx < availabilitySlots.size()) {
             Goal goal = goals.get(currentGoalIdx);
             AvailabilitySlot aSlot = availabilitySlots.get(currentASlotIdx);
 
             long fillAmount = Math.min(currentGoalMinutes, currentASlotMinutes);
 
-            if (fillAmount > 0){
+            if (fillAmount > 0) {
                 SubSession newSSision = new SubSession();
                 newSSision.setWeeklySessionPlan(plan);
                 newSSision.setDayOfWeek(aSlot.getDayOfWeek());
@@ -175,35 +224,33 @@ public class GenerationService {
                 currentASlotMinutes -= fillAmount;
             }
 
-            if (currentGoalMinutes <= 0){
+            if (currentGoalMinutes <= 0) {
                 currentGoalIdx++;
                 if (currentGoalIdx < goals.size()) {
-                    currentGoalMinutes = (long)(goals.get(currentGoalIdx).getTargetHoursPerWeek() * 60);
+                    currentGoalMinutes = (long) (goals.get(currentGoalIdx).getTargetHoursPerWeek() * 60);
                 }
             }
 
-            if (currentASlotMinutes <= 0){
+            if (currentASlotMinutes <= 0) {
                 currentASlotIdx++;
-                if (currentASlotIdx < availabilitySlots.size()){
+                if (currentASlotIdx < availabilitySlots.size()) {
                     currentASlotMinutes = Duration.between(
                             availabilitySlots.get(currentASlotIdx).getStartTime(),
-                            availabilitySlots.get(currentASlotIdx).getEndTime()
-                    ).toMinutes();
+                            availabilitySlots.get(currentASlotIdx).getEndTime()).toMinutes();
                 }
             }
         }
 
-        while (currentGoalIdx < goals.size()){
+        while (currentGoalIdx < goals.size()) {
             totalPenaltyPoints += currentGoalMinutes;
             currentGoalIdx++;
             if (currentGoalIdx < goals.size()) {
-                currentGoalMinutes = (long)(goals.get(currentGoalIdx).getTargetHoursPerWeek() * 60);
+                currentGoalMinutes = (long) (goals.get(currentGoalIdx).getTargetHoursPerWeek() * 60);
             }
         }
 
         return new EngineResult(
                 generatedSubSessions,
-                totalPenaltyPoints
-        );
+                totalPenaltyPoints);
     }
 }

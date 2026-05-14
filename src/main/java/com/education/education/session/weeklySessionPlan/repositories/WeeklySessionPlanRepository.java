@@ -5,17 +5,48 @@ import com.education.education.session.weeklySessionPlan.enums.EPlanStatus;
 import com.education.education.session.weeklySessionPlan.enums.ESessionStatus;
 import com.education.education.user.user.entities.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
 public interface WeeklySessionPlanRepository extends JpaRepository<WeeklySessionPlan, UUID> {
-    List<WeeklySessionPlan> findByUserOrderByStartTimeDesc(User user);
+    WeeklySessionPlan findByUser_IdAndWeekYearAndWeekNumber(UUID userId, Integer weekYear, Integer weekNumber);
 
-    List<WeeklySessionPlan> findByUserAndPlanStatusOrderByStartTimeDesc(User user, EPlanStatus planStatus);
+    boolean existsByUser_IdAndWeekYearAndWeekNumber(UUID userId, Integer weekYear, Integer weekNumber);
 
-    List<WeeklySessionPlan> findAllByStartTimeBeforeAndSessionStatusNot(
+    List<WeeklySessionPlan> findAllByUser_IdOrderByWeekYearDescWeekNumberDesc(UUID userId);
+
+    List<WeeklySessionPlan> findAllBySessionStatus(ESessionStatus sessionStatus);
+
+    @Query("select w from WeeklySessionPlan w where w.user = :user order by w.weekYear desc, w.weekNumber desc")
+    List<WeeklySessionPlan> findByUserOrderByStartTimeDesc(@Param("user") User user);
+
+    @Query("select w from WeeklySessionPlan w where w.user = :user and w.planStatus = :planStatus order by w.weekYear desc, w.weekNumber desc")
+    List<WeeklySessionPlan> findByUserAndPlanStatusOrderByStartTimeDesc(
+            @Param("user") User user,
+            @Param("planStatus") EPlanStatus planStatus);
+
+    @Query("select w from WeeklySessionPlan w where w.sessionStatus <> :status")
+    List<WeeklySessionPlan> findAllBySessionStatusNot(@Param("status") ESessionStatus status);
+
+    default List<WeeklySessionPlan> findAllByStartTimeBeforeAndSessionStatusNot(
             LocalDateTime endTime,
-            ESessionStatus status);
+            ESessionStatus status) {
+        if (endTime == null) {
+            return List.of();
+        }
+
+        java.time.temporal.WeekFields weekFields = java.time.temporal.WeekFields.ISO;
+        int targetWeekYear = endTime.get(weekFields.weekBasedYear());
+        int targetWeekNumber = endTime.get(weekFields.weekOfWeekBasedYear());
+
+        return findAllBySessionStatusNot(status).stream()
+                .filter(plan -> plan.getWeekYear() != null && plan.getWeekNumber() != null)
+                .filter(plan -> plan.getWeekYear() < targetWeekYear
+                        || (plan.getWeekYear().equals(targetWeekYear) && plan.getWeekNumber() < targetWeekNumber))
+                .toList();
+    }
 }
