@@ -48,6 +48,8 @@ public class PasswordResetTokenService {
                     .build();
             tokenRepository.save(token);
 
+            System.out.println("token that i should send when i want to use it for reset password: "+ token.getToken());
+
             emailService.sendPasswordResetEmail(user.getEmail(),user.getFirstName() ,rowToken);
         }
     }

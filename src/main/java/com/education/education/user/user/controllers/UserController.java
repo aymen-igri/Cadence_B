@@ -1,5 +1,7 @@
 package com.education.education.user.user.controllers;
 
+import com.education.education.user.passwordResetToken.dto.request.PasswordUpdateReq;
+import com.education.education.user.passwordResetToken.services.PasswordResetTokenService;
 import com.education.education.user.user.dto.request.AddUserRequest;
 import com.education.education.user.user.dto.request.UpdateUserDataReq;
 import com.education.education.user.user.dto.response.AddUserResponse;
@@ -27,6 +29,7 @@ public class UserController {
 
     private final UserService userService;
     private final ImageService imageService;
+    private final PasswordResetTokenService passwordResetTokenService;
 
     @PostMapping("/add")
     public ResponseEntity<AddUserResponse> addUser(
@@ -43,6 +46,16 @@ public class UserController {
             @Valid @RequestBody UpdateUserDataReq updateReq
     ){
         return ResponseEntity.ok(userService.updateUserData(userDetails, updateReq));
+    }
+
+    @PreAuthorize("hasRole('GENERAL_USER')")
+    @PatchMapping("/update-password")
+    public ResponseEntity<String> updatePassword(
+            @Valid @RequestBody PasswordUpdateReq req,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        passwordResetTokenService.updatePassword(userDetails, req);
+        return ResponseEntity.ok("Password updated successfully");
     }
 
     @GetMapping("/profile")
