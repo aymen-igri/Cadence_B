@@ -22,7 +22,7 @@ public class MfaSessionController {
 
 
     @PostMapping("/email/trigger")
-    @PreAuthorize("hasRole('PRE_AUTH')")
+    @PreAuthorize("hasAnyRole('PRE_AUTH', 'GENERAL_USER')")
     public ResponseEntity<?> triggerMfa(
             @AuthenticationPrincipal UserDetails userDetails
     ){
@@ -60,7 +60,7 @@ public class MfaSessionController {
     }
 
     @PostMapping("/verify")
-    @PreAuthorize("hasRole('PRE_AUTH')")
+    @PreAuthorize("hasAnyRole('PRE_AUTH', 'GENERAL_USER')")
     public ResponseEntity<?> verifyAndSwap(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam String code,

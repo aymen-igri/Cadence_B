@@ -36,7 +36,11 @@ public class PasswordResetTokenService {
         if (user == null) user = userRepository.findByEmail(identifier);
 
         if (user != null) {
-            tokenRepository.deleteByUser(user);
+            PasswordResetToken existingToken = tokenRepository.findByUser(user);
+            if (existingToken != null) {
+                tokenRepository.delete(existingToken);
+                tokenRepository.flush();
+            }
 
             String rowToken = UUID.randomUUID().toString();
             String hashedToken = this.hash(rowToken);

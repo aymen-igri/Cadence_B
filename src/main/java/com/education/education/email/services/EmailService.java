@@ -43,7 +43,7 @@ public class EmailService {
             Context context = new Context();
             context.setVariable("firstName", firstName);
 
-            String resetLink = "http://localhost:4200/reset-password?token=" + resetToken;
+            String resetLink = "http://localhost:4200/change-password?token=" + resetToken;
             context.setVariable("resetLink", resetLink);
 
             String htmlContent = templateEngine.process("password-reset", context);
