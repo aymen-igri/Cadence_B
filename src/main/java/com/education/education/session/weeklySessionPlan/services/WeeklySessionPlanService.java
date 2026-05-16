@@ -2,6 +2,7 @@ package com.education.education.session.weeklySessionPlan.services;
 
 import com.education.education.session.dto.request.UpdateSessionReq;
 import com.education.education.session.dto.response.CreateSessionRes;
+import com.education.education.session.dto.response.StruggleSubjectRes;
 import com.education.education.session.subSession.dto.request.CreateSubSessionReq;
 import com.education.education.session.subSession.dto.request.UpdateSubSessionReq;
 import com.education.education.session.subSession.dto.response.CreateSubSessionRes;
@@ -32,19 +33,26 @@ import com.education.education.session.weeklySessionPlan.enums.ESessionStatus;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.time.temporal.WeekFields;
 
 @Service
 @Transactional
 @AllArgsConstructor
 public class WeeklySessionPlanService {
+
+    private static final DateTimeFormatter STRUGGLE_WEEK_LABEL_FORMATTER = DateTimeFormatter.ofPattern("MMMM d, yyyy",
+            Locale.ENGLISH);
 
     private final UserRepository userRepository;
     private final WeeklySessionPlanRepository weeklySessionPlanRepository;
@@ -217,6 +225,67 @@ public class WeeklySessionPlanService {
                         subSession.getDayOfWeek(),
                         subSession.getStartTime(),
                         subSession.getEndTime()))
+                .toList();
+    }
+
+    public List<StruggleSubjectRes> getStruggleDetection(UserDetails mainUser) {
+        User user = userRepository.findByUsername(mainUser.getUsername());
+        if (user == null) {
+            throw new IllegalArgumentException("User not found");
+        }
+
+        List<WeeklySessionPlan> recentCompletedOrClosedPlans = weeklySessionPlanRepository
+                .findByUserOrderByStartTimeDesc(user)
+                .stream()
+                .filter(plan -> plan.getSessionStatus() == ESessionStatus.COMPLETED
+                        || plan.getSessionStatus() == ESessionStatus.CLOSED)
+                .limit(4)
+                .toList();
+
+        if (recentCompletedOrClosedPlans.isEmpty()) {
+            return List.of();
+        }
+
+        List<Subject> subjects = subjectRepository.findByCreatedBy(user);
+        if (subjects.isEmpty()) {
+            return List.of();
+        }
+
+        Map<UUID, Integer> missedWeeksBySubjectId = new HashMap<>();
+        Map<UUID, String> lastCompletedWeekBySubjectId = new HashMap<>();
+        Set<UUID> subjectIds = subjects.stream()
+                .map(Subject::getId)
+                .collect(Collectors.toSet());
+
+        for (WeeklySessionPlan plan : recentCompletedOrClosedPlans) {
+            String weekLabel = buildWeekLabel(plan);
+            Set<UUID> completedSubjectIds = subSessionRepository.findByWeeklySessionPlanOrderByStartTimeAsc(plan)
+                    .stream()
+                    .filter(subSession -> subSession.getSubject() != null)
+                    .filter(subSession -> subjectIds.contains(subSession.getSubject().getId()))
+                    .filter(subSession -> subSession.getSubSessionStatus() == ESubSessionStatus.COMPLETED)
+                    .map(subSession -> subSession.getSubject().getId())
+                    .collect(Collectors.toSet());
+
+            for (Subject subject : subjects) {
+                UUID subjectId = subject.getId();
+                if (completedSubjectIds.contains(subjectId)) {
+                    lastCompletedWeekBySubjectId.putIfAbsent(subjectId, weekLabel);
+                } else {
+                    missedWeeksBySubjectId.merge(subjectId, 1, Integer::sum);
+                }
+            }
+        }
+
+        return subjects.stream()
+                .map(subject -> new StruggleSubjectRes(
+                        subject.getId().toString(),
+                        subject.getName(),
+                        missedWeeksBySubjectId.getOrDefault(subject.getId(), 0),
+                        lastCompletedWeekBySubjectId.get(subject.getId())))
+                .filter(res -> res.missedWeeksCount() >= 3)
+                .sorted(Comparator.comparingInt(StruggleSubjectRes::missedWeeksCount).reversed()
+                        .thenComparing(StruggleSubjectRes::subjectName, String.CASE_INSENSITIVE_ORDER))
                 .toList();
     }
 
@@ -445,6 +514,15 @@ public class WeeklySessionPlanService {
                 .anyMatch(subSession -> subSession.getDayOfWeek() == currentDate.getDayOfWeek()
                         && !currentTime.isBefore(subSession.getStartTime())
                         && currentTime.isBefore(subSession.getEndTime()));
+    }
+
+    private String buildWeekLabel(WeeklySessionPlan plan) {
+        LocalDate weekStart = plan.getStartTime() == null ? null : plan.getStartTime().toLocalDate();
+        if (weekStart == null) {
+            return null;
+        }
+
+        return "Week of " + weekStart.format(STRUGGLE_WEEK_LABEL_FORMATTER);
     }
 
 }

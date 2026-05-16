@@ -25,14 +25,12 @@ import com.education.education.session.weeklySessionPlan.services.WeeklySessionP
 import com.education.education.user.user.entities.User;
 import com.education.education.user.user.repositories.UserRepository;
 import com.education.education.exeption.PastWeekException;
-import com.education.education.exeption.WeeklySessionAlreadyExistsException;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -58,15 +56,10 @@ public class GenerationService {
         GenerationData data = generationMapper.toGenerationData(req);
         List<Goal> goals = data.goals();
         AvailabilityPlan availabilityPlan = data.availabilityPlan();
-        LocalDateTime weekStartDate = data.weekStartDate();
-        int weekYear = weekStartDate.get(WeekFields.ISO.weekBasedYear());
-        int weekNumber = weekStartDate.get(WeekFields.ISO.weekOfWeekBasedYear());
+        int weekYear = data.weekYear();
+        int weekNumber = data.weekNumber();
 
-        validateWeekIsCurrentOrFuture(weekStartDate);
-
-        if (weeklySessionPlanRepository.existsByUser_IdAndWeekYearAndWeekNumber(user.getId(), weekYear, weekNumber)) {
-            throw new WeeklySessionAlreadyExistsException(weekYear, weekNumber);
-        }
+        validateWeekIsCurrentOrFuture(weekYear, weekNumber);
 
         WeeklySessionPlan newWeeklySessionPlan = new WeeklySessionPlan();
         newWeeklySessionPlan.setUser(user);
@@ -128,14 +121,14 @@ public class GenerationService {
                 savedPlan.getPenaltyPoints());
     }
 
-    private void validateWeekIsCurrentOrFuture(LocalDateTime weekStartDate) {
+    private void validateWeekIsCurrentOrFuture(Integer weekYear, Integer weekNumber) {
         WeekFields weekFields = WeekFields.ISO;
         LocalDate today = LocalDate.now();
         int currentWeekYear = today.get(weekFields.weekBasedYear());
         int currentWeekNumber = today.get(weekFields.weekOfWeekBasedYear());
 
-        int targetWeekYear = weekStartDate.get(weekFields.weekBasedYear());
-        int targetWeekNumber = weekStartDate.get(weekFields.weekOfWeekBasedYear());
+        int targetWeekYear = weekYear;
+        int targetWeekNumber = weekNumber;
 
         boolean isPastWeek = targetWeekYear < currentWeekYear
                 || (targetWeekYear == currentWeekYear && targetWeekNumber < currentWeekNumber);

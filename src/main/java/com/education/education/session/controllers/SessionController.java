@@ -5,6 +5,7 @@ import com.education.education.session.dto.request.GenerationSessionReq;
 import com.education.education.session.dto.request.UpdateSessionReq;
 import com.education.education.session.dto.response.CreateSessionRes;
 import com.education.education.session.dto.response.GenerationSessionRes;
+import com.education.education.session.dto.response.StruggleSubjectRes;
 import com.education.education.session.services.GenerationService;
 import com.education.education.session.sharedSession.DTO.ShareSessionRequest;
 import com.education.education.session.sharedSession.DTO.SharedSessionRes;
@@ -162,5 +163,11 @@ public class SessionController {
             @PathVariable UUID sessionId,
             @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(weeklySessionPlanService.getMissedSubSessions(sessionId, userDetails));
+    }
+
+    @GetMapping("/struggle-detection")
+    public ResponseEntity<List<StruggleSubjectRes>> getStruggleDetection(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(weeklySessionPlanService.getStruggleDetection(userDetails));
     }
 }
