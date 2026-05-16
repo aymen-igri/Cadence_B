@@ -18,7 +18,8 @@ public class WeeklySessionPlanMapper {
     public WeeklySessionPlan toWeeklySessionPlan(CreateWeeklySessionReq request) {
         WeeklySessionPlan weeklySessionPlan = new WeeklySessionPlan();
         weeklySessionPlan.setTitle(request.title());
-        weeklySessionPlan.setStartTime(request.startTime());
+        weeklySessionPlan.setWeekYear(request.weekYear());
+        weeklySessionPlan.setWeekNumber(request.weekNumber());
         weeklySessionPlan.setPlanStatus(EPlanStatus.PUBLISHED);
 
         return weeklySessionPlan;
@@ -27,10 +28,10 @@ public class WeeklySessionPlanMapper {
     public CreateWeeklySessionRes toCreateWeeklySessionRes(WeeklySessionPlan weeklySessionPlan) {
         return new CreateWeeklySessionRes(
                 weeklySessionPlan.getId(),
-                weeklySessionPlan.getStartTime(),
+                weeklySessionPlan.getWeekYear(),
+                weeklySessionPlan.getWeekNumber(),
                 weeklySessionPlan.getTitle(),
-                weeklySessionPlan.getSessionStatus()
-        );
+                weeklySessionPlan.getSessionStatus());
     }
 
     public void updateWeeklySessionFromReq(UpdateWeeklySessionReq request, WeeklySessionPlan weeklySessionPlan) {

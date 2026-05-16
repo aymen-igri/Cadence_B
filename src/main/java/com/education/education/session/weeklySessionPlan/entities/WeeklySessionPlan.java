@@ -16,11 +16,13 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.time.temporal.WeekFields;
 import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "weekly_session")
+@Table(name = "weekly_session", uniqueConstraints = @UniqueConstraint(columnNames = { "user_id", "week_year",
+        "week_number" }))
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -35,12 +37,15 @@ public class WeeklySessionPlan extends AuditableEntity {
     @Column(nullable = true)
     private String title;
 
-    @Column(nullable = false)
-    private LocalDateTime startTime;
+    @Column(name = "week_year", nullable = false)
+    private Integer weekYear;
+
+    @Column(name = "week_number", nullable = false)
+    private Integer weekNumber;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ESessionStatus sessionStatus = ESessionStatus.PENDING;
+    private ESessionStatus sessionStatus = ESessionStatus.UPCOMING;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -70,4 +75,30 @@ public class WeeklySessionPlan extends AuditableEntity {
 
     @OneToMany(mappedBy = "weeklySessionPlan", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Task> createdTasks;
+
+    @Transient
+    public LocalDateTime getStartTime() {
+        if (weekYear == null || weekNumber == null) {
+            return null;
+        }
+
+        WeekFields weekFields = WeekFields.ISO;
+        return java.time.LocalDate.of(weekYear, 1, 4)
+                .with(weekFields.weekOfWeekBasedYear(), weekNumber)
+                .with(weekFields.dayOfWeek(), 1)
+                .atStartOfDay();
+    }
+
+    @Transient
+    public void setStartTime(LocalDateTime startTime) {
+        if (startTime == null) {
+            this.weekYear = null;
+            this.weekNumber = null;
+            return;
+        }
+
+        WeekFields weekFields = WeekFields.ISO;
+        this.weekYear = startTime.get(weekFields.weekBasedYear());
+        this.weekNumber = startTime.get(weekFields.weekOfWeekBasedYear());
+    }
 }

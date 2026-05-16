@@ -6,11 +6,13 @@ import com.education.education.session.subSession.repositories.SubSessionReposit
 import com.education.education.session.weeklySessionPlan.entities.WeeklySessionPlan;
 import com.education.education.session.weeklySessionPlan.enums.ESessionStatus;
 import com.education.education.session.weeklySessionPlan.repositories.WeeklySessionPlanRepository;
+import com.education.education.session.weeklySessionPlan.services.WeeklySessionPlanService;
 import lombok.AllArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -20,63 +22,54 @@ public class SessionExpirationSchedulerService {
 
     private final WeeklySessionPlanRepository weeklySessionPlanRepository;
     private final SubSessionRepository subSessionRepository;
+    private final WeeklySessionPlanService weeklySessionPlanService;
     private static final Logger logger = Logger.getLogger(SessionExpirationSchedulerService.class.getName());
 
     @Scheduled(cron = "0 0 0 * * *")
     @Transactional
-    public void closeExpiredWeeklySessions() {
-        logger.info("Starting scheduled task: closeExpiredWeeklySessions");
+    public void processActiveWeeklySessions() {
+        logger.info("Starting scheduled task: processActiveWeeklySessions");
 
         try {
-            LocalDateTime now = LocalDateTime.now();
-            LocalDateTime sevenDaysAgo = now.minusDays(7);
+            List<WeeklySessionPlan> activeSessions = weeklySessionPlanRepository
+                    .findAllBySessionStatus(ESessionStatus.ACTIVE);
 
-            // Find all sessions that have expired and are not already CLOSED
-            List<WeeklySessionPlan> expiredSessions = weeklySessionPlanRepository
-                    .findAllByStartTimeBeforeAndSessionStatusNot(sevenDaysAgo, ESessionStatus.CLOSED);
+            logger.info("Found " + activeSessions.size() + " active sessions to process");
 
-            logger.info("Found " + expiredSessions.size() + " expired sessions to process");
-
-            for (WeeklySessionPlan session : expiredSessions) {
-                processExpiredSession(session);
+            for (WeeklySessionPlan session : activeSessions) {
+                processActiveSession(session);
             }
 
-            logger.info("Successfully completed closeExpiredWeeklySessions task");
+            logger.info("Successfully completed processActiveWeeklySessions task");
         } catch (Exception e) {
-            logger.severe("Error during closeExpiredWeeklySessions: " + e.getMessage());
+            logger.severe("Error during processActiveWeeklySessions: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     @Transactional
-    private void processExpiredSession(WeeklySessionPlan session) {
-        logger.info("Processing expired session: " + session.getId());
+    private void processActiveSession(WeeklySessionPlan session) {
+        logger.info("Processing active session: " + session.getId());
 
-        // Get all subsessions for this session
         List<SubSession> subSessions = subSessionRepository
                 .findByWeeklySessionPlanOrderByStartTimeAsc(session);
 
-        // Flip PENDING subsessions to INCOMPLETED
         for (SubSession subSession : subSessions) {
-            if (subSession.getSubSessionStatus() == ESubSessionStatus.PENDING) {
+            if (subSession.getSubSessionStatus() == ESubSessionStatus.PENDING && hasSubSessionTimePassed(subSession)) {
                 subSession.setSubSessionStatus(ESubSessionStatus.INCOMPLETED);
                 subSessionRepository.save(subSession);
                 logger.info("Flipped subsession " + subSession.getId() + " to INCOMPLETED");
             }
         }
 
-        // Determine the final status of the weekly session
-        boolean allCompleted = subSessions.stream()
-                .allMatch(ss -> ss.getSubSessionStatus() == ESubSessionStatus.COMPLETED);
-
-        if (allCompleted) {
-            session.setSessionStatus(ESessionStatus.COMPLETED);
-            logger.info("Set session " + session.getId() + " to COMPLETED");
-        } else {
-            session.setSessionStatus(ESessionStatus.CLOSED);
-            logger.info("Set session " + session.getId() + " to CLOSED");
-        }
-
-        weeklySessionPlanRepository.save(session);
+        weeklySessionPlanService.deriveStatus(session);
     }
+
+    private boolean hasSubSessionTimePassed(SubSession subSession) {
+        LocalDate today = LocalDate.now();
+        return subSession.getDayOfWeek().getValue() < today.getDayOfWeek().getValue()
+                || (subSession.getDayOfWeek() == today.getDayOfWeek()
+                        && LocalDateTime.now().toLocalTime().isAfter(subSession.getStartTime()));
+    }
+
 }

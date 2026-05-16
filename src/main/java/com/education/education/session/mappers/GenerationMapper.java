@@ -19,32 +19,32 @@ import java.util.List;
 @AllArgsConstructor
 public class GenerationMapper {
 
-    private final GoalRepository goalRepository;
-    private final AvailabilityPlanRepository availabilityPlanRepository;
-    
-    public GenerationData toGenerationData(GenerationSessionReq req){
-        List<Goal> goals = goalRepository.findAllById(req.goalsList());
-        
-        AvailabilityPlan availabilityPlan = availabilityPlanRepository.findById(req.availabilityPlanID()).
-                orElseThrow(() -> new RuntimeException("Availability Plan not found with ID: " + req.availabilityPlanID()));
+        private final GoalRepository goalRepository;
+        private final AvailabilityPlanRepository availabilityPlanRepository;
 
-        return new GenerationData(
-                goals,
-                availabilityPlan,
-                req.weekStartDate()
-        );
-    }
+        public GenerationData toGenerationData(GenerationSessionReq req) {
+                List<Goal> goals = goalRepository.findAllById(req.goalsList());
 
-    public GenerationSessionRes toGeneratedSession(
-            CreateSessionRes generatedSession,
-            EPlanStatus planStatus,
-            Long penaltyPoints
-    ){
-        return new GenerationSessionRes(
-                generatedSession,
-                planStatus,
-                penaltyPoints
-        );
-    }
+                AvailabilityPlan availabilityPlan = availabilityPlanRepository.findById(req.availabilityPlanID())
+                                .orElseThrow(() -> new RuntimeException(
+                                                "Availability Plan not found with ID: " + req.availabilityPlanID()));
+
+                return new GenerationData(
+                                goals,
+                                availabilityPlan,
+                                req.weekYear(),
+                                req.weekNumber());
+        }
+
+        public GenerationSessionRes toGeneratedSession(
+                        CreateSessionRes generatedSession,
+                        EPlanStatus planStatus,
+                        Long penaltyPoints) {
+                return new GenerationSessionRes(
+                                generatedSession.weeklySession(),
+                                generatedSession.subSessions(),
+                                planStatus,
+                                penaltyPoints);
+        }
 
 }

@@ -2,13 +2,12 @@ package com.education.education.session.weeklySessionPlan.dto.response;
 
 import com.education.education.session.weeklySessionPlan.enums.ESessionStatus;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 public record CreateWeeklySessionRes(
-        UUID id,
-        LocalDateTime startTime,
-        String title,
-        ESessionStatus sessionStatus
-) {
+                UUID id,
+                Integer weekYear,
+                Integer weekNumber,
+                String title,
+                ESessionStatus sessionStatus) {
 }
