@@ -15,6 +15,7 @@ import com.education.education.session.sharedSession.repositories.SharedSessionR
 import com.education.education.session.subSession.dto.response.CreateSubSessionRes;
 import com.education.education.session.subSession.entities.SubSession;
 import com.education.education.session.weeklySessionPlan.entities.WeeklySessionPlan;
+import com.education.education.session.weeklySessionPlan.enums.EPlanStatus;
 import com.education.education.session.weeklySessionPlan.enums.ESessionStatus;
 import com.education.education.session.weeklySessionPlan.mappers.WeeklySessionPlanMapper;
 import com.education.education.session.weeklySessionPlan.repositories.WeeklySessionPlanRepository;
@@ -138,6 +139,7 @@ public class SharedSessionService {
         forkedSession.setGenerationAlgoType(sourceSession.getGenerationAlgoType());
         forkedSession.setPenaltyPoints(sourceSession.getPenaltyPoints());
         forkedSession.setAvailabilityPlan(sourceSession.getAvailabilityPlan());
+        forkedSession.setPlanStatus(EPlanStatus.PUBLISHED);
         forkedSession.setUser(user);
 
         List<SubSession> forkedSubSessions = new ArrayList<>();
