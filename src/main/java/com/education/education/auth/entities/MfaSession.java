@@ -18,32 +18,34 @@ import lombok.*;
 @Getter
 @Setter
 @Builder
-public class MfaSession extends AuditableEntity{
+public class MfaSession extends AuditableEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private UUID id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.AUTO)
+  private UUID id;
 
-    @Column(nullable = false)
-    private String code; 
-    
-    @Column(nullable = false)
-    private LocalDateTime expiry;
-    
-    private boolean isUsed = false;
+  @Column(nullable = false)
+  private String code;
 
-    @Column(nullable = true)
-    private int attempts = 0;
+  @Column(nullable = false)
+  private LocalDateTime expiry;
 
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private EMfaType type;
+  @Builder.Default
+  private boolean isUsed = false;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+  @Column(nullable = true)
+  @Builder.Default
+  private int attempts = 0;
 
-    public boolean isExpired() {
-        return LocalDateTime.now().isAfter(expiry);
-    }
+  @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
+  private EMfaType type;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id", nullable = false)
+  private User user;
+
+  public boolean isExpired() {
+    return LocalDateTime.now().isAfter(expiry);
+  }
 }
