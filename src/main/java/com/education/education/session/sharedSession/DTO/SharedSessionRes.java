@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 public record SharedSessionRes(
+        UUID sharedSessionId,
         UUID sessionId,
         String sessionTitle,
         UUID groupId,

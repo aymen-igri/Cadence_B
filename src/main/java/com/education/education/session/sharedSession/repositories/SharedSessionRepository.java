@@ -14,5 +14,5 @@ public interface SharedSessionRepository extends JpaRepository<SharedSession, UU
 
     Optional<SharedSession> findBySession_IdAndGroup_Id(UUID sessionId, UUID groupId);
 
-    boolean existsBySession_IdAndGroup_Id(UUID sessionId, UUID groupId);
+    boolean existsBySessionIdAndGroupId(UUID sessionId, UUID groupId);
 }

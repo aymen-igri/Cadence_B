@@ -6,6 +6,7 @@ import com.education.education.session.dto.request.UpdateSessionReq;
 import com.education.education.session.dto.response.CreateSessionRes;
 import com.education.education.session.dto.response.GenerationSessionRes;
 import com.education.education.session.dto.response.StruggleSubjectRes;
+import com.education.education.exeption.WeeklySessionAlreadyExistsException;
 import com.education.education.session.services.GenerationService;
 import com.education.education.session.sharedSession.DTO.ShareSessionRequest;
 import com.education.education.session.sharedSession.DTO.SharedSessionRes;
@@ -16,7 +17,7 @@ import com.education.education.session.subSession.dto.request.UpdateSubSessionSt
 import com.education.education.session.subSession.dto.response.CreateSubSessionRes;
 import com.education.education.session.subSession.dto.response.MissedSubSessionRes;
 import com.education.education.exeption.PastWeekException;
-import com.education.education.exeption.WeeklySessionAlreadyExistsException;
+import com.education.education.exeption.DuplicateSharedSessionException;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -126,11 +127,15 @@ public class SessionController {
     }
 
     @PostMapping("/share")
-    public ResponseEntity<SharedSessionRes> shareSession(
+    public ResponseEntity<?> shareSession(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody ShareSessionRequest request) {
-        SharedSessionRes res = sharedSessionService.shareSession(request, userDetails.getUsername());
-        return ResponseEntity.ok(res);
+        try {
+            SharedSessionRes res = sharedSessionService.shareSession(request, userDetails.getUsername());
+            return ResponseEntity.ok(res);
+        } catch (DuplicateSharedSessionException ex) {
+            return ResponseEntity.status(409).body(buildErrorResponse(409, "Conflict", ex.getMessage()));
+        }
     }
 
     @GetMapping("/shared/{groupId}")
@@ -147,6 +152,18 @@ public class SessionController {
             @AuthenticationPrincipal UserDetails userDetails) {
         sharedSessionService.unshareSession(sessionId, groupId, userDetails.getUsername());
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/shared-sessions/{sharedSessionId}/fork")
+    public ResponseEntity<?> forkSharedSession(
+            @PathVariable UUID sharedSessionId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            return ResponseEntity
+                    .ok(sharedSessionService.forkSharedSession(sharedSessionId, userDetails.getUsername()));
+        } catch (WeeklySessionAlreadyExistsException ex) {
+            return ResponseEntity.status(409).body(buildErrorResponse(409, "Conflict", ex.getMessage()));
+        }
     }
 
     private Map<String, Object> buildErrorResponse(int status, String error, String message) {
