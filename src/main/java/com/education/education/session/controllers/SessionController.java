@@ -8,6 +8,7 @@ import com.education.education.session.dto.response.GenerationSessionRes;
 import com.education.education.session.dto.response.StruggleSubjectRes;
 import com.education.education.exeption.WeeklySessionAlreadyExistsException;
 import com.education.education.session.services.GenerationService;
+import com.education.education.session.services.SessionExpirationSchedulerService;
 import com.education.education.session.sharedSession.DTO.ShareSessionRequest;
 import com.education.education.session.sharedSession.DTO.SharedSessionRes;
 import com.education.education.session.sharedSession.services.SharedSessionService;
@@ -50,6 +51,14 @@ public class SessionController {
     private final WeeklySessionPlanService weeklySessionPlanService;
     private final GenerationService generationService;
     private final SharedSessionService sharedSessionService;
+    private final SessionExpirationSchedulerService sessionExpirationSchedulerService;
+
+    @PostMapping("/trigger")
+    public ResponseEntity<String> triggerCronJob() {
+        sessionExpirationSchedulerService.processActiveWeeklySessions();
+        return ResponseEntity.ok("Cron triggered manually");
+    }
+    
 
     @PostMapping("/create")
     public ResponseEntity<?> createSession(
