@@ -216,8 +216,7 @@ public class WeeklySessionPlanService {
         }
 
         return subSessionRepository.findByWeeklySessionPlanOrderByStartTimeAsc(weeklySessionPlan).stream()
-                .filter(subSession -> subSession.getSubSessionStatus() == ESubSessionStatus.INCOMPLETED
-                        || subSession.getSubSessionStatus() == ESubSessionStatus.CLOSED)
+                .filter(subSession -> subSession.getSubSessionStatus() == ESubSessionStatus.INCOMPLETED)
                 .map(subSession -> new MissedSubSessionRes(
                         subSession.getId(),
                         subSession.getSubject().getId(),
@@ -238,7 +237,7 @@ public class WeeklySessionPlanService {
                 .findByUserOrderByStartTimeDesc(user)
                 .stream()
                 .filter(plan -> plan.getSessionStatus() == ESessionStatus.COMPLETED
-                        || plan.getSessionStatus() == ESessionStatus.CLOSED)
+                        || plan.getSessionStatus() == ESessionStatus.INCOMPLETED)
                 .limit(4)
                 .toList();
 
@@ -463,7 +462,7 @@ public class WeeklySessionPlanService {
         }
 
         if (weekHasPassed) {
-            return ESessionStatus.CLOSED;
+            return ESessionStatus.INCOMPLETED;
         }
 
         boolean allPending = subSessions.stream()

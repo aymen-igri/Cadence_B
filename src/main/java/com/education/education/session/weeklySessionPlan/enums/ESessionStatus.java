@@ -4,6 +4,5 @@ public enum ESessionStatus {
     UPCOMING,
     ACTIVE,
     INCOMPLETED,
-    COMPLETED,
-    CLOSED
+    COMPLETED
 }
