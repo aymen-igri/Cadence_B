@@ -3,7 +3,9 @@ package com.education.education.subject.services;
 import com.education.education.subject.dto.request.CreateSubjectReq;
 import com.education.education.subject.dto.request.UpdateSubjectReq;
 import com.education.education.subject.dto.response.CreateSubjectRes;
+import com.education.education.subject.dto.response.DoughnutChart;
 import com.education.education.subject.entities.Subject;
+import com.education.education.subject.enums.EPriority;
 import com.education.education.subject.mappers.SubjectMapper;
 import com.education.education.subject.repositories.SubjectRepository;
 import com.education.education.user.user.entities.User;
@@ -23,93 +25,96 @@ import java.util.stream.Collectors;
 @Transactional
 public class SubjectService {
 
-    private final SubjectRepository subjectRepository;
-    private final UserRepository userRepository;
-    private final SubjectMapper subjectMapper;
+  private final SubjectRepository subjectRepository;
+  private final UserRepository userRepository;
+  private final SubjectMapper subjectMapper;
 
-    public CreateSubjectRes createSubject(
-            CreateSubjectReq subjectReq,
-            UserDetails userDetails
-    ){
-        User createdBy = userRepository.findByUsername(userDetails.getUsername());
-        if (createdBy == null) {
-            throw new IllegalArgumentException("User not found");
-        }
-
-        Subject createSubject = subjectMapper.subjectReqToSubject(subjectReq);
-        createSubject.setCreatedBy(createdBy);
-
-        Subject savedSubject = subjectRepository.save(createSubject);
-
-        return new CreateSubjectRes(
-                savedSubject.getId(),
-                savedSubject.getName(),
-                savedSubject.getPriority(),
-                savedSubject.getDescription(),
-                savedSubject.getCreatedAt()
-        );
+  public CreateSubjectRes createSubject(
+      CreateSubjectReq subjectReq,
+      UserDetails userDetails) {
+    User createdBy = userRepository.findByUsername(userDetails.getUsername());
+    if (createdBy == null) {
+      throw new IllegalArgumentException("User not found");
     }
 
-    public List<CreateSubjectRes> getAllSubjects(UserDetails userDetails) {
-        User user = userRepository.findByUsername(userDetails.getUsername());
-        if (user == null) {
-            throw new IllegalArgumentException("User not found");
-        }
+    Subject createSubject = subjectMapper.subjectReqToSubject(subjectReq);
+    createSubject.setCreatedBy(createdBy);
 
-        return subjectRepository.findByCreatedBy(user).stream()
-                .map(subject -> new CreateSubjectRes(
-                        subject.getId(),
-                        subject.getName(),
-                        subject.getPriority(),
-                        subject.getDescription(),
-                        subject.getCreatedAt()
-                ))
-                .collect(Collectors.toList());
+    Subject savedSubject = subjectRepository.save(createSubject);
+
+    return new CreateSubjectRes(
+        savedSubject.getId(),
+        savedSubject.getName(),
+        savedSubject.getPriority(),
+        savedSubject.getDescription(),
+        savedSubject.getCreatedAt());
+  }
+
+  public List<CreateSubjectRes> getAllSubjects(UserDetails userDetails) {
+    User user = userRepository.findByUsername(userDetails.getUsername());
+    if (user == null) {
+      throw new IllegalArgumentException("User not found");
     }
 
-    public CreateSubjectRes updateSubject(
-            UUID subjectId,
-            UpdateSubjectReq subjectReq,
-            UserDetails userDetails
-    ){
-        User user = userRepository.findByUsername(userDetails.getUsername());
-        if (user == null) {
-            throw new IllegalArgumentException("User not found");
-        }
+    return subjectRepository.findByCreatedBy(user).stream()
+        .map(subject -> new CreateSubjectRes(
+            subject.getId(),
+            subject.getName(),
+            subject.getPriority(),
+            subject.getDescription(),
+            subject.getCreatedAt()))
+        .collect(Collectors.toList());
+  }
 
-        Subject subject = subjectRepository.findById(subjectId)
-                .orElseThrow(() -> new IllegalArgumentException("Subject not found"));
-
-        if (!subject.getCreatedBy().getId().equals(user.getId())) {
-            throw new AccessDeniedException("You are not allowed to update this subject");
-        }
-
-        subjectMapper.updateSubjectFromReq(subjectReq, subject);
-
-        Subject savedSubject = subjectRepository.save(subject);
-
-        return new CreateSubjectRes(
-                savedSubject.getId(),
-                savedSubject.getName(),
-                savedSubject.getPriority(),
-                savedSubject.getDescription(),
-                savedSubject.getCreatedAt()
-        );
+  public CreateSubjectRes updateSubject(
+      UUID subjectId,
+      UpdateSubjectReq subjectReq,
+      UserDetails userDetails) {
+    User user = userRepository.findByUsername(userDetails.getUsername());
+    if (user == null) {
+      throw new IllegalArgumentException("User not found");
     }
 
-    public void deleteSubject(UUID subjectId, UserDetails userDetails){
-        User user = userRepository.findByUsername(userDetails.getUsername());
-        if (user == null) {
-            throw new IllegalArgumentException("User not found");
-        }
+    Subject subject = subjectRepository.findById(subjectId)
+        .orElseThrow(() -> new IllegalArgumentException("Subject not found"));
 
-        Subject subject = subjectRepository.findById(subjectId)
-                .orElseThrow(() -> new IllegalArgumentException("Subject not found"));
-
-        if (!subject.getCreatedBy().getId().equals(user.getId())) {
-            throw new AccessDeniedException("You are not allowed to delete this subject");
-        }
-
-        subjectRepository.delete(subject);
+    if (!subject.getCreatedBy().getId().equals(user.getId())) {
+      throw new AccessDeniedException("You are not allowed to update this subject");
     }
+
+    subjectMapper.updateSubjectFromReq(subjectReq, subject);
+
+    Subject savedSubject = subjectRepository.save(subject);
+
+    return new CreateSubjectRes(
+        savedSubject.getId(),
+        savedSubject.getName(),
+        savedSubject.getPriority(),
+        savedSubject.getDescription(),
+        savedSubject.getCreatedAt());
+  }
+
+  public void deleteSubject(UUID subjectId, UserDetails userDetails) {
+    User user = userRepository.findByUsername(userDetails.getUsername());
+    if (user == null) {
+      throw new IllegalArgumentException("User not found");
+    }
+
+    Subject subject = subjectRepository.findById(subjectId)
+        .orElseThrow(() -> new IllegalArgumentException("Subject not found"));
+
+    if (!subject.getCreatedBy().getId().equals(user.getId())) {
+      throw new AccessDeniedException("You are not allowed to delete this subject");
+    }
+
+    subjectRepository.delete(subject);
+  }
+
+  public DoughnutChart getDoughnutChartData() {
+    Number hightPSubject = subjectRepository.countByPriority(EPriority.HIGH);
+    Number mediumPSubject = subjectRepository.countByPriority(EPriority.MEDIUM);
+    Number lowPSubject = subjectRepository.countByPriority(EPriority.LOW);
+
+    return subjectMapper.toDoughnutChart(hightPSubject, mediumPSubject, lowPSubject);
+  }
 }

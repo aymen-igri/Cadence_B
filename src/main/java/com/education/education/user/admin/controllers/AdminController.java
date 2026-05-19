@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.education.education.session.subSession.dto.response.StackedAreaChart;
 import com.education.education.session.subSession.services.SubSessionService;
+import com.education.education.subject.dto.response.DoughnutChart;
+import com.education.education.subject.services.SubjectService;
 import com.education.education.user.admin.dto.res.Cards;
 import com.education.education.user.admin.services.AdminService;
 
@@ -22,6 +24,7 @@ public class AdminController {
 
   private final AdminService adminService;
   private final SubSessionService subSessionService;
+  private final SubjectService subjectService;
 
   @GetMapping("/cards")
   @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
@@ -33,6 +36,12 @@ public class AdminController {
   @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
   public ResponseEntity<StackedAreaChart> stackedAreaChartData() {
     return ResponseEntity.ok(subSessionService.getStackedAreaChartData());
+  }
+
+  @GetMapping("/charts/doughnutChart")
+  @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+  public ResponseEntity<DoughnutChart> doughnutChartData() {
+    return ResponseEntity.ok(subjectService.getDoughnutChartData());
   }
 
 }
