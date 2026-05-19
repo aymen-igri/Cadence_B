@@ -59,8 +59,10 @@ public class GroupMessageService {
                                 savedMessage.getId(),
                                 group.getId(),
                                 sender.getId(),
+                                group.getName(),
                                 sender.getFirstName(),
                                 sender.getLastName(),
+                                sender.getProfilePic(),
                                 savedMessage.getContent(),
                                 savedMessage.getSentAt());
 
@@ -89,8 +91,10 @@ public class GroupMessageService {
                                                 msg.getId(),
                                                 msg.getGroup().getId(),
                                                 msg.getSender().getId(),
+                                                msg.getGroup().getName(),
                                                 msg.getSender().getFirstName(),
                                                 msg.getSender().getLastName(),
+                                                msg.getSender().getProfilePic(),
                                                 msg.getContent(),
                                                 msg.getSentAt()))
                                 .collect(Collectors.toList());
@@ -117,8 +121,10 @@ public class GroupMessageService {
                                                 msg.getId(),
                                                 msg.getGroup().getId(),
                                                 msg.getSender().getId(),
+                                                msg.getGroup().getName(),
                                                 msg.getSender().getFirstName(),
                                                 msg.getSender().getLastName(),
+                                                msg.getSender().getProfilePic(),
                                                 msg.getContent(),
                                                 msg.getSentAt()))
                                 .collect(Collectors.toList());
