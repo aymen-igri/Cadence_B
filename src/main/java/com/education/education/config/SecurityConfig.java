@@ -28,16 +28,15 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-    private final UserDetailsService userDetailsService;
+  private final UserDetailsService userDetailsService;
 
-    @Bean
-public CorsConfigurationSource corsConfigurationSource() {
+  @Bean
+  public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
     configuration.setAllowedOriginPatterns(List.of("*"));
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
@@ -46,45 +45,46 @@ public CorsConfigurationSource corsConfigurationSource() {
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", configuration);
-    return source;  // ← return the source, not a CorsFilter wrapper
-}
+    return source; // ← return the source, not a CorsFilter wrapper
+  }
 
+  @Bean
+  public SecurityFilterChain securityFilterChain(
+      HttpSecurity http,
+      AuthenticationConfiguration authenticationConfiguration,
+      AuthUtils authUtils,
+      UserRepository userRepository) throws Exception {
+    AuthenticationManager authenticationManager = authenticationConfiguration.getAuthenticationManager();
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(
-            HttpSecurity http, 
-            AuthenticationConfiguration authenticationConfiguration,
-            AuthUtils authUtils,
-            UserRepository userRepository
-    ) throws Exception {
-        AuthenticationManager authenticationManager = authenticationConfiguration.getAuthenticationManager();
-
-        http.cors(Customizer.withDefaults()).csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(
-                           auth -> auth
-                                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                                   .requestMatchers("/auth/**").permitAll()
-                                   .requestMatchers("/roles/**").permitAll() // for now 3la 9bl testing wsafi
-                                   .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                                   .requestMatchers("/auth/mfa/**").hasRole("PRE_AUTH")
-                                   .requestMatchers("/ws").permitAll() // Allow WebSocket endpoint HTTP upgrade without JWT at HTTP level; JWT validation happens at STOMP layer
-                                .anyRequest().authenticated() // zdt hadi bach nchof wach authorization verification khdama f subject creation wla la, haydha la bghiti tkamal khadma
-                );
-        http.sessionManagement(
-                s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+    http.cors(Customizer.withDefaults()).csrf(AbstractHttpConfigurer::disable)
+        .authorizeHttpRequests(
+            auth -> auth
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/roles/**").permitAll() // for now 3la 9bl testing wsafi
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                .requestMatchers("/auth/mfa/**").hasRole("PRE_AUTH")
+                .requestMatchers("/ws").permitAll() // Allow WebSocket endpoint HTTP upgrade without JWT at HTTP level;
+                                                    // JWT validation happens at STOMP layer
+                .anyRequest().authenticated() // zdt hadi bach nchof wach authorization verification khdama f subject
+                                              // creation wla la, haydha la bghiti tkamal khadma
         );
-        http.addFilter(new JwtAuthenticationFilter(authenticationManager, authUtils, userRepository));
-        http.addFilterBefore(new JwtAuthorizationFilter(authUtils, userDetailsService), UsernamePasswordAuthenticationFilter.class);
-        return http.build();
-    }
+    http.sessionManagement(
+        s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+    http.addFilter(new JwtAuthenticationFilter(authenticationManager, authUtils, userRepository));
+    http.addFilterBefore(new JwtAuthorizationFilter(authUtils, userDetailsService),
+        UsernamePasswordAuthenticationFilter.class);
+    return http.build();
+  }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
-    }
-    
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
-    }
+  @Bean
+  public PasswordEncoder passwordEncoder() {
+    return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+  }
+
+  @Bean
+  public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+      throws Exception {
+    return authenticationConfiguration.getAuthenticationManager();
+  }
 }
