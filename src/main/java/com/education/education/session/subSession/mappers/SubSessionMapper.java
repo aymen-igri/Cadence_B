@@ -3,12 +3,19 @@ package com.education.education.session.subSession.mappers;
 import com.education.education.session.subSession.dto.request.CreateSubSessionReq;
 import com.education.education.session.subSession.dto.request.UpdateSubSessionReq;
 import com.education.education.session.subSession.dto.response.CreateSubSessionRes;
+import com.education.education.session.subSession.dto.response.HeatMapChart;
+import com.education.education.session.subSession.dto.response.HeatMapChartData;
+import com.education.education.session.subSession.dto.response.HeatMapChartSubSessionData;
 import com.education.education.session.subSession.dto.response.StackedAreaChart;
 import com.education.education.session.subSession.dto.response.StackedAreaChartData;
 import com.education.education.session.subSession.entities.SubSession;
 import com.education.education.subject.repositories.SubjectRepository;
+
 import lombok.AllArgsConstructor;
 
+import java.time.DayOfWeek;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 import org.springframework.stereotype.Component;
@@ -87,5 +94,29 @@ public class SubSessionMapper {
         completedSubSession,
         pendingSubSession,
         incompletedSubSession);
+  }
+
+  public HeatMapChartSubSessionData toHeatMapChartSubSessionData(
+      LocalTime creationHour,
+      Number subSessionCount) {
+    return new HeatMapChartSubSessionData(
+        creationHour,
+        subSessionCount);
+  }
+
+  public HeatMapChartData toHeatMapChartData(
+      DayOfWeek dayOfWeek,
+      List<HeatMapChartSubSessionData> subSessionData) {
+    return new HeatMapChartData(
+        dayOfWeek,
+        subSessionData);
+  }
+
+  public HeatMapChart toHeatMapChart(
+      LocalDateTime localDateTime,
+      List<HeatMapChartData> heatMapChartDataList) {
+    return new HeatMapChart(
+        localDateTime,
+        heatMapChartDataList);
   }
 }
