@@ -13,13 +13,16 @@ import com.education.education.groups.repositories.GroupRepository;
 import com.education.education.groups.repositories.GroupJoinRequestRepository;
 import com.education.education.groups.entities.GroupJoinRequest;
 import com.education.education.groups.enums.JoinRequestStatus;
+import com.education.education.groups.mappers.GroupsMapper;
 import com.education.education.groups.DTO.response.JoinRequestResponse;
+import com.education.education.groups.DTO.response.TopActiveGroupsResponse;
 import com.education.education.notification.services.NotificationService;
 import com.education.education.user.user.entities.User;
 import com.education.education.user.user.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.AccessDeniedException;
 
 import java.time.LocalDateTime;
@@ -33,530 +36,530 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class GroupService {
 
-    private final GroupRepository groupRepository;
-    private final UserRepository userRepository;
-    private final GroupMemberRepository groupMemberRepository;
-    private final GroupJoinRequestRepository groupJoinRequestRepository;
-    private final NotificationService notificationService;
+  private final GroupRepository groupRepository;
+  private final UserRepository userRepository;
+  private final GroupMemberRepository groupMemberRepository;
+  private final GroupJoinRequestRepository groupJoinRequestRepository;
+  private final NotificationService notificationService;
+  private final GroupsMapper groupsMapper;
 
-    @Transactional
-    public GroupResponse createGroup(CreateGroupRequest request, UUID creatorId) {
-        User creator = userRepository.findById(creatorId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+  @Transactional
+  public GroupResponse createGroup(CreateGroupRequest request, UUID creatorId) {
+    User creator = userRepository.findById(creatorId)
+        .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        Group group = Group.builder()
-                .name(request.name())
-                .description(request.description())
-                .privacyLevel(request.privacyLevel())
-                .members(new ArrayList<>())
-                .build();
+    Group group = Group.builder()
+        .name(request.name())
+        .description(request.description())
+        .privacyLevel(request.privacyLevel())
+        .members(new ArrayList<>())
+        .build();
 
-        GroupMember ownerMember = GroupMember.builder()
-                .group(group)
-                .user(creator)
-                .role(GroupRole.OWNER)
-                .build();
+    GroupMember ownerMember = GroupMember.builder()
+        .group(group)
+        .user(creator)
+        .role(GroupRole.OWNER)
+        .build();
 
-        group.getMembers().add(ownerMember);
+    group.getMembers().add(ownerMember);
 
-        Group savedGroup = groupRepository.save(group);
+    Group savedGroup = groupRepository.save(group);
 
-        return new GroupResponse(
-                savedGroup.getId(),
-                savedGroup.getName(),
-                savedGroup.getDescription(),
-                savedGroup.getPrivacyLevel(),
-                savedGroup.getMembers().size(),
-                savedGroup.getCreatedAt(),
-                savedGroup.getMembers().get(0).getId().toString(),
-                savedGroup.getMembers().get(0).getRole()
-        );
+    return new GroupResponse(
+        savedGroup.getId(),
+        savedGroup.getName(),
+        savedGroup.getDescription(),
+        savedGroup.getPrivacyLevel(),
+        savedGroup.getMembers().size(),
+        savedGroup.getCreatedAt(),
+        savedGroup.getMembers().get(0).getId().toString(),
+        savedGroup.getMembers().get(0).getRole());
+  }
+
+  public List<GroupResponse> getAllGroups(UUID currentUserId) {
+    List<Group> allGroups = groupRepository.findAll();
+
+    return allGroups.stream().map(group -> {
+      Optional<GroupMember> userMembership = group.getMembers().stream()
+          .filter(member -> member.getUser().getId().equals(currentUserId))
+          .findFirst();
+
+      String membershipId = userMembership.map(member -> member.getId().toString()).orElse(null);
+      GroupRole userRole = userMembership.map(GroupMember::getRole).orElse(null);
+
+      return new GroupResponse(
+          group.getId(),
+          group.getName(),
+          group.getDescription(),
+          group.getPrivacyLevel(),
+          group.getMembers().size(),
+          group.getCreatedAt(),
+          membershipId,
+          userRole);
+    }).collect(Collectors.toList());
+  }
+
+  public GroupResponse getGroupById(UUID groupId, UUID currentUserId) {
+    Group group = groupRepository.findById(groupId)
+        .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+    Optional<GroupMember> userMembership = group.getMembers().stream()
+        .filter(member -> member.getUser().getId().equals(currentUserId))
+        .findFirst();
+
+    if (userMembership.isEmpty()) {
+      throw new AccessDeniedException("You are not a member of this group");
     }
 
-    public List<GroupResponse> getAllGroups(UUID currentUserId) {
-        List<Group> allGroups = groupRepository.findAll();
-        
-        return allGroups.stream().map(group -> {
-            Optional<GroupMember> userMembership = group.getMembers().stream()
-                    .filter(member -> member.getUser().getId().equals(currentUserId))
-                    .findFirst();
+    String membershipId = userMembership.get().getId().toString();
+    GroupRole userRole = userMembership.get().getRole();
 
-            String membershipId = userMembership.map(member -> member.getId().toString()).orElse(null);
-            GroupRole userRole = userMembership.map(GroupMember::getRole).orElse(null);
+    return new GroupResponse(
+        group.getId(),
+        group.getName(),
+        group.getDescription(),
+        group.getPrivacyLevel(),
+        group.getMembers().size(),
+        group.getCreatedAt(),
+        membershipId,
+        userRole);
+  }
 
-            return new GroupResponse(
-                    group.getId(),
-                    group.getName(),
-                    group.getDescription(),
-                    group.getPrivacyLevel(),
-                    group.getMembers().size(),
-                    group.getCreatedAt(),
-                    membershipId,
-                    userRole
-            );
-        }).collect(Collectors.toList());
+  public List<GroupMemberResponse> getGroupMembers(UUID groupId, UUID currentUserId) {
+    Group group = groupRepository.findById(groupId)
+        .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+    boolean isMember = group.getMembers().stream()
+        .anyMatch(member -> member.getUser().getId().equals(currentUserId));
+
+    if (!isMember) {
+      throw new AccessDeniedException("You are not an approved member of this group");
     }
 
-    public GroupResponse getGroupById(UUID groupId, UUID currentUserId) {
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+    return group.getMembers().stream()
+        .map(member -> new GroupMemberResponse(
+            member.getId(),
+            member.getUser().getId(),
+            member.getUser().getFirstName(),
+            member.getUser().getLastName(),
+            member.getUser().getUsername(),
+            member.getRole(),
+            member.getJoinedAt()))
+        .collect(Collectors.toList());
+  }
 
-        Optional<GroupMember> userMembership = group.getMembers().stream()
-                .filter(member -> member.getUser().getId().equals(currentUserId))
-                .findFirst();
+  @Transactional
+  public GroupMemberResponse joinPublicGroup(UUID groupId, UUID userId) {
+    Group group = groupRepository.findById(groupId)
+        .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
-        if (userMembership.isEmpty()) {
-            throw new AccessDeniedException("You are not a member of this group");
-        }
-
-        String membershipId = userMembership.get().getId().toString();
-        GroupRole userRole = userMembership.get().getRole();
-
-        return new GroupResponse(
-                group.getId(),
-                group.getName(),
-                group.getDescription(),
-                group.getPrivacyLevel(),
-                group.getMembers().size(),
-                group.getCreatedAt(),
-                membershipId,
-                userRole
-        );
+    if (group.getPrivacyLevel() != GroupPrivacy.PUBLIC) {
+      throw new IllegalArgumentException("This endpoint is only for public groups");
     }
 
-    public List<GroupMemberResponse> getGroupMembers(UUID groupId, UUID currentUserId) {
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+    Optional<GroupMember> existingMemberOpt = group.getMembers().stream()
+        .filter(member -> member.getUser().getId().equals(userId))
+        .findFirst();
 
-        boolean isMember = group.getMembers().stream()
-                .anyMatch(member -> member.getUser().getId().equals(currentUserId));
-
-        if (!isMember) {
-            throw new AccessDeniedException("You are not an approved member of this group");
-        }
-
-        return group.getMembers().stream()
-                .map(member -> new GroupMemberResponse(
-                        member.getId(),
-                        member.getUser().getId(),
-                        member.getUser().getFirstName(),
-                        member.getUser().getLastName(),
-                        member.getUser().getUsername(),
-                        member.getRole(),
-                        member.getJoinedAt()
-                ))
-                .collect(Collectors.toList());
+    if (existingMemberOpt.isPresent()) {
+      throw new IllegalArgumentException("You are already a member of this group");
     }
 
-    @Transactional
-    public GroupMemberResponse joinPublicGroup(UUID groupId, UUID userId) {
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        if (group.getPrivacyLevel() != GroupPrivacy.PUBLIC) {
-            throw new IllegalArgumentException("This endpoint is only for public groups");
-        }
+    GroupMember newMember = GroupMember.builder()
+        .group(group)
+        .user(user)
+        .role(GroupRole.MEMBER)
+        .build();
 
-        Optional<GroupMember> existingMemberOpt = group.getMembers().stream()
-                .filter(member -> member.getUser().getId().equals(userId))
-                .findFirst();
+    GroupMember savedMember = groupMemberRepository.save(newMember);
+    return createGroupMemberResponse(savedMember, user);
+  }
 
-        if (existingMemberOpt.isPresent()) {
-            throw new IllegalArgumentException("You are already a member of this group");
-        }
+  @Transactional
+  public JoinRequestResponse sendJoinRequest(UUID groupId, UUID userId) {
+    Group group = groupRepository.findById(groupId)
+        .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        GroupMember newMember = GroupMember.builder()
-                .group(group)
-                .user(user)
-                .role(GroupRole.MEMBER)
-                .build();
-
-        GroupMember savedMember = groupMemberRepository.save(newMember);
-        return createGroupMemberResponse(savedMember, user);
+    if (group.getPrivacyLevel() != GroupPrivacy.PRIVATE) {
+      throw new IllegalArgumentException("This endpoint is only for private groups");
     }
 
-    @Transactional
-    public JoinRequestResponse sendJoinRequest(UUID groupId, UUID userId) {
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+    Optional<GroupMember> existingMemberOpt = group.getMembers().stream()
+        .filter(member -> member.getUser().getId().equals(userId))
+        .findFirst();
 
-        if (group.getPrivacyLevel() != GroupPrivacy.PRIVATE) {
-            throw new IllegalArgumentException("This endpoint is only for private groups");
-        }
-
-        Optional<GroupMember> existingMemberOpt = group.getMembers().stream()
-                .filter(member -> member.getUser().getId().equals(userId))
-                .findFirst();
-
-        if (existingMemberOpt.isPresent()) {
-                throw new IllegalArgumentException("You are already a member of this group");
-        }
-        
-        Optional<GroupJoinRequest> existingRequest = groupJoinRequestRepository.findByGroupIdAndUserId(groupId, userId);
-        if (existingRequest.isPresent() && existingRequest.get().getStatus() == JoinRequestStatus.PENDING) {
-            throw new IllegalArgumentException("You already have a pending join request for this group");
-        }
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        GroupJoinRequest joinRequest = GroupJoinRequest.builder()
-                .group(group)
-                .user(user)
-                .status(JoinRequestStatus.PENDING)
-                .build();
-        GroupJoinRequest savedRequest = groupJoinRequestRepository.save(joinRequest);
-        
-        return new JoinRequestResponse(
-                savedRequest.getId(),
-                group.getId(),
-                user.getId(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getUsername(),
-                savedRequest.getStatus(),
-                savedRequest.getCreatedAt()
-        );
+    if (existingMemberOpt.isPresent()) {
+      throw new IllegalArgumentException("You are already a member of this group");
     }
 
-    private GroupMemberResponse createGroupMemberResponse(GroupMember member, User user) {
-        return new GroupMemberResponse(
-                member.getId(),
-                user.getId(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getUsername(),
-                member.getRole(),
-                member.getJoinedAt()
-        );
+    Optional<GroupJoinRequest> existingRequest = groupJoinRequestRepository.findByGroupIdAndUserId(groupId, userId);
+    if (existingRequest.isPresent() && existingRequest.get().getStatus() == JoinRequestStatus.PENDING) {
+      throw new IllegalArgumentException("You already have a pending join request for this group");
     }
 
-    public List<JoinRequestResponse> getPendingRequests(UUID groupId, UUID requesterId) {
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        if (!verifyAdminOrOwner(group, requesterId)) {
-            return new ArrayList<>();
-        }
+    GroupJoinRequest joinRequest = GroupJoinRequest.builder()
+        .group(group)
+        .user(user)
+        .status(JoinRequestStatus.PENDING)
+        .build();
+    GroupJoinRequest savedRequest = groupJoinRequestRepository.save(joinRequest);
 
-        List<GroupJoinRequest> requests = groupJoinRequestRepository.findByGroupIdAndStatus(groupId, JoinRequestStatus.PENDING);
-        
-        return requests.stream()
-                .map(req -> new JoinRequestResponse(
-                        req.getId(),
-                        req.getGroup().getId(),
-                        req.getUser().getId(),
-                        req.getUser().getFirstName(),
-                        req.getUser().getLastName(),
-                        req.getUser().getUsername(),
-                        req.getStatus(),
-                        req.getCreatedAt()
-                ))
-                .collect(Collectors.toList());
+    return new JoinRequestResponse(
+        savedRequest.getId(),
+        group.getId(),
+        user.getId(),
+        user.getFirstName(),
+        user.getLastName(),
+        user.getUsername(),
+        savedRequest.getStatus(),
+        savedRequest.getCreatedAt());
+  }
+
+  private GroupMemberResponse createGroupMemberResponse(GroupMember member, User user) {
+    return new GroupMemberResponse(
+        member.getId(),
+        user.getId(),
+        user.getFirstName(),
+        user.getLastName(),
+        user.getUsername(),
+        member.getRole(),
+        member.getJoinedAt());
+  }
+
+  public List<JoinRequestResponse> getPendingRequests(UUID groupId, UUID requesterId) {
+    Group group = groupRepository.findById(groupId)
+        .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+    if (!verifyAdminOrOwner(group, requesterId)) {
+      return new ArrayList<>();
     }
 
-    @Transactional
-    public GroupMemberResponse approveJoinRequest(UUID groupId, UUID targetUserId, UUID requesterId) {
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+    List<GroupJoinRequest> requests = groupJoinRequestRepository.findByGroupIdAndStatus(groupId,
+        JoinRequestStatus.PENDING);
 
-        if (!verifyAdminOrOwner(group, requesterId)) {
-            throw new AccessDeniedException("You do not have permission to approve join requests");
-        }
+    return requests.stream()
+        .map(req -> new JoinRequestResponse(
+            req.getId(),
+            req.getGroup().getId(),
+            req.getUser().getId(),
+            req.getUser().getFirstName(),
+            req.getUser().getLastName(),
+            req.getUser().getUsername(),
+            req.getStatus(),
+            req.getCreatedAt()))
+        .collect(Collectors.toList());
+  }
 
-        GroupJoinRequest targetRequest = groupJoinRequestRepository.findByGroupIdAndUserId(groupId, targetUserId)
-                .filter(req -> req.getStatus() == JoinRequestStatus.PENDING)
-                .orElseThrow(() -> new IllegalArgumentException("Pending join request not found"));
+  @Transactional
+  public GroupMemberResponse approveJoinRequest(UUID groupId, UUID targetUserId, UUID requesterId) {
+    Group group = groupRepository.findById(groupId)
+        .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
-        groupJoinRequestRepository.delete(targetRequest);
-        
-        GroupMember newMember = GroupMember.builder()
-                .group(group)
-                .user(targetRequest.getUser())
-                .role(GroupRole.MEMBER)
-                .joinedAt(LocalDateTime.now())
-                .build();
-                
-        GroupMember savedMember = groupMemberRepository.save(newMember);
-
-        
-        notificationService.sendNotification(
-                targetRequest.getUser().getId(),
-                "Your join request to the group: " + group.getName() + " has been approved.",
-                "Join Request Approved",
-                "GROUP_UPDATE"
-        );
-        
-        return createGroupMemberResponse(savedMember, savedMember.getUser());
+    if (!verifyAdminOrOwner(group, requesterId)) {
+      throw new AccessDeniedException("You do not have permission to approve join requests");
     }
 
-    @Transactional
-    public void rejectJoinRequest(UUID groupId, UUID targetUserId, UUID requesterId) {
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+    GroupJoinRequest targetRequest = groupJoinRequestRepository.findByGroupIdAndUserId(groupId, targetUserId)
+        .filter(req -> req.getStatus() == JoinRequestStatus.PENDING)
+        .orElseThrow(() -> new IllegalArgumentException("Pending join request not found"));
 
-        if (!verifyAdminOrOwner(group, requesterId)) {
-            throw new AccessDeniedException("You do not have permission to reject join requests");
-        }
+    groupJoinRequestRepository.delete(targetRequest);
 
-        GroupJoinRequest targetRequest = groupJoinRequestRepository.findByGroupIdAndUserId(groupId, targetUserId)
-                .filter(req -> req.getStatus() == JoinRequestStatus.PENDING)
-                .orElseThrow(() -> new IllegalArgumentException("Pending join request not found"));
+    GroupMember newMember = GroupMember.builder()
+        .group(group)
+        .user(targetRequest.getUser())
+        .role(GroupRole.MEMBER)
+        .joinedAt(LocalDateTime.now())
+        .build();
 
-        groupJoinRequestRepository.delete(targetRequest);
+    GroupMember savedMember = groupMemberRepository.save(newMember);
 
-        notificationService.sendNotification(
-                targetRequest.getUser().getId(),
-                "Your join request to the group: " + group.getName() + " has been rejected.",
-                "Join Request Rejected",
-                "GROUP_UPDATE"
-        );
+    notificationService.sendNotification(
+        targetRequest.getUser().getId(),
+        "Your join request to the group: " + group.getName() + " has been approved.",
+        "Join Request Approved",
+        "GROUP_UPDATE");
+
+    return createGroupMemberResponse(savedMember, savedMember.getUser());
+  }
+
+  @Transactional
+  public void rejectJoinRequest(UUID groupId, UUID targetUserId, UUID requesterId) {
+    Group group = groupRepository.findById(groupId)
+        .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+    if (!verifyAdminOrOwner(group, requesterId)) {
+      throw new AccessDeniedException("You do not have permission to reject join requests");
     }
 
-    private boolean verifyAdminOrOwner(Group group, UUID userId) {
-        boolean isAuthorized = group.getMembers().stream()
-                .anyMatch(member -> member.getUser().getId().equals(userId) &&
-                        (member.getRole() == GroupRole.OWNER || member.getRole() == GroupRole.ADMIN));
+    GroupJoinRequest targetRequest = groupJoinRequestRepository.findByGroupIdAndUserId(groupId, targetUserId)
+        .filter(req -> req.getStatus() == JoinRequestStatus.PENDING)
+        .orElseThrow(() -> new IllegalArgumentException("Pending join request not found"));
 
-        return isAuthorized;
+    groupJoinRequestRepository.delete(targetRequest);
+
+    notificationService.sendNotification(
+        targetRequest.getUser().getId(),
+        "Your join request to the group: " + group.getName() + " has been rejected.",
+        "Join Request Rejected",
+        "GROUP_UPDATE");
+  }
+
+  private boolean verifyAdminOrOwner(Group group, UUID userId) {
+    boolean isAuthorized = group.getMembers().stream()
+        .anyMatch(member -> member.getUser().getId().equals(userId) &&
+            (member.getRole() == GroupRole.OWNER || member.getRole() == GroupRole.ADMIN));
+
+    return isAuthorized;
+  }
+
+  @Transactional
+  public GroupResponse updateGroup(UUID groupId, UpdateGroupRequest request, UUID requesterId) {
+    Group group = groupRepository.findById(groupId)
+        .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+    if (!verifyAdminOrOwner(group, requesterId)) {
+      throw new AccessDeniedException("You do not have permission to update this group");
     }
 
-    @Transactional
-    public GroupResponse updateGroup(UUID groupId, UpdateGroupRequest request, UUID requesterId) {
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
-
-        if (!verifyAdminOrOwner(group, requesterId)) {
-            throw new AccessDeniedException("You do not have permission to update this group");
-        }
-
-        if (request.name() != null && !request.name().trim().isEmpty()) {
-            group.setName(request.name());
-        }
-        if (request.description() != null) {
-            group.setDescription(request.description());
-        }
-        if (request.privacyLevel() != null) {
-            group.setPrivacyLevel(request.privacyLevel());
-        }
-
-        Group savedGroup = groupRepository.save(group);
-
-        Optional<GroupMember> userMembership = savedGroup.getMembers().stream()
-                .filter(member -> member.getUser().getId().equals(requesterId))
-                .findFirst();
-
-        String membershipId = userMembership.map(member -> member.getId().toString()).orElse(null);
-        GroupRole userRole = userMembership.map(GroupMember::getRole).orElse(null);
-
-        return new GroupResponse(
-                savedGroup.getId(),
-                savedGroup.getName(),
-                savedGroup.getDescription(),
-                savedGroup.getPrivacyLevel(),
-                savedGroup.getMembers().size(),
-                savedGroup.getCreatedAt(),
-                membershipId,
-                userRole
-        );
+    if (request.name() != null && !request.name().trim().isEmpty()) {
+      group.setName(request.name());
+    }
+    if (request.description() != null) {
+      group.setDescription(request.description());
+    }
+    if (request.privacyLevel() != null) {
+      group.setPrivacyLevel(request.privacyLevel());
     }
 
-    @Transactional
-    public void deleteGroup(UUID groupId, UUID requesterId) {
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+    Group savedGroup = groupRepository.save(group);
 
-        boolean isOwner = group.getMembers().stream()
-                .anyMatch(member -> member.getUser().getId().equals(requesterId) &&
-                        member.getRole() == GroupRole.OWNER);
+    Optional<GroupMember> userMembership = savedGroup.getMembers().stream()
+        .filter(member -> member.getUser().getId().equals(requesterId))
+        .findFirst();
 
-        if (!isOwner) {
-            throw new AccessDeniedException("You do not have permission to delete this group. Only the owner can delete the group.");
-        }
+    String membershipId = userMembership.map(member -> member.getId().toString()).orElse(null);
+    GroupRole userRole = userMembership.map(GroupMember::getRole).orElse(null);
 
-        groupRepository.delete(group);
+    return new GroupResponse(
+        savedGroup.getId(),
+        savedGroup.getName(),
+        savedGroup.getDescription(),
+        savedGroup.getPrivacyLevel(),
+        savedGroup.getMembers().size(),
+        savedGroup.getCreatedAt(),
+        membershipId,
+        userRole);
+  }
+
+  @Transactional
+  public void deleteGroup(UUID groupId, UUID requesterId) {
+    Group group = groupRepository.findById(groupId)
+        .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+    boolean isOwner = group.getMembers().stream()
+        .anyMatch(member -> member.getUser().getId().equals(requesterId) &&
+            member.getRole() == GroupRole.OWNER);
+
+    if (!isOwner) {
+      throw new AccessDeniedException(
+          "You do not have permission to delete this group. Only the owner can delete the group.");
     }
 
-    @Transactional
-    public void transferOwnership(UUID groupId, UUID targetUserId, UUID requesterId) {
-        if (requesterId.equals(targetUserId)) {
-            throw new IllegalArgumentException("Cannot transfer ownership to yourself");
-        }
+    groupRepository.delete(group);
+  }
 
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
-
-        GroupMember currentOwner = group.getMembers().stream()
-                .filter(member -> member.getUser().getId().equals(requesterId) &&
-                        member.getRole() == GroupRole.OWNER)
-                .findFirst()
-                .orElseThrow(() -> new AccessDeniedException("You do not have permission to transfer ownership. Only the owner can do this."));
-
-        GroupMember newOwner = group.getMembers().stream()
-                .filter(member -> member.getUser().getId().equals(targetUserId))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Target user is not a member of the group"));
-
-
-        currentOwner.setRole(GroupRole.MEMBER);
-        newOwner.setRole(GroupRole.OWNER);
-
-        groupMemberRepository.save(currentOwner);
-        groupMemberRepository.save(newOwner);
-
-        notificationService.sendNotification(
-                newOwner.getUser().getId(),
-                "You have been transferred ownership of the group: " + group.getName(),
-                "Group Ownership Transferred",
-                "GROUP_ROLE_UPDATE"
-        );
+  @Transactional
+  public void transferOwnership(UUID groupId, UUID targetUserId, UUID requesterId) {
+    if (requesterId.equals(targetUserId)) {
+      throw new IllegalArgumentException("Cannot transfer ownership to yourself");
     }
 
-    @Transactional
-    public void leaveGroup(UUID groupId, UUID requesterId) {
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+    Group group = groupRepository.findById(groupId)
+        .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
-        GroupMember currentMember = group.getMembers().stream()
-                .filter(member -> member.getUser().getId().equals(requesterId))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("You are not a member of this group"));
+    GroupMember currentOwner = group.getMembers().stream()
+        .filter(member -> member.getUser().getId().equals(requesterId) &&
+            member.getRole() == GroupRole.OWNER)
+        .findFirst()
+        .orElseThrow(() -> new AccessDeniedException(
+            "You do not have permission to transfer ownership. Only the owner can do this."));
 
-        if (currentMember.getRole() == GroupRole.OWNER) {
-            throw new IllegalArgumentException("Owner cannot leave the group. Transfer ownership or delete the group first.");
-        }
-        group.getMembers().remove(currentMember);
-        groupMemberRepository.delete(currentMember);
+    GroupMember newOwner = group.getMembers().stream()
+        .filter(member -> member.getUser().getId().equals(targetUserId))
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException("Target user is not a member of the group"));
+
+    currentOwner.setRole(GroupRole.MEMBER);
+    newOwner.setRole(GroupRole.OWNER);
+
+    groupMemberRepository.save(currentOwner);
+    groupMemberRepository.save(newOwner);
+
+    notificationService.sendNotification(
+        newOwner.getUser().getId(),
+        "You have been transferred ownership of the group: " + group.getName(),
+        "Group Ownership Transferred",
+        "GROUP_ROLE_UPDATE");
+  }
+
+  @Transactional
+  public void leaveGroup(UUID groupId, UUID requesterId) {
+    Group group = groupRepository.findById(groupId)
+        .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+    GroupMember currentMember = group.getMembers().stream()
+        .filter(member -> member.getUser().getId().equals(requesterId))
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException("You are not a member of this group"));
+
+    if (currentMember.getRole() == GroupRole.OWNER) {
+      throw new IllegalArgumentException("Owner cannot leave the group. Transfer ownership or delete the group first.");
+    }
+    group.getMembers().remove(currentMember);
+    groupMemberRepository.delete(currentMember);
+  }
+
+  @Transactional
+  public void removeMember(UUID groupId, UUID targetUserMemberId, UUID requesterId) {
+
+    Group group = groupRepository.findById(groupId)
+        .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+    GroupMember requesterMember = group.getMembers().stream()
+        .filter(member -> member.getUser().getId().equals(requesterId))
+        .findFirst()
+        .orElseThrow(() -> new AccessDeniedException("You are not an approved member of this group"));
+
+    if (requesterMember.getId().equals(targetUserMemberId)) {
+      throw new IllegalArgumentException("You cannot remove yourself. Use the leave group functionality instead.");
     }
 
-    @Transactional
-    public void removeMember(UUID groupId, UUID targetUserMemberId, UUID requesterId) {
+    GroupMember targetMember = group.getMembers().stream()
+        .filter(member -> member.getId().equals(targetUserMemberId))
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException("Target user is not a member of the group"));
 
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
-
-        GroupMember requesterMember = group.getMembers().stream()
-                .filter(member -> member.getUser().getId().equals(requesterId))
-                .findFirst()
-                .orElseThrow(() -> new AccessDeniedException("You are not an approved member of this group"));
-
-        if (requesterMember.getId().equals(targetUserMemberId)) {
-            throw new IllegalArgumentException("You cannot remove yourself. Use the leave group functionality instead.");
-        }
-
-        GroupMember targetMember = group.getMembers().stream()
-                .filter(member -> member.getId().equals(targetUserMemberId))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Target user is not a member of the group"));
-
-        if (requesterMember.getRole() == GroupRole.MEMBER) {
-            throw new AccessDeniedException("Members cannot remove other users");
-        }
-
-        if (requesterMember.getRole() == GroupRole.ADMIN && targetMember.getRole() != GroupRole.MEMBER) {
-            throw new AccessDeniedException("Admins can only remove regular members");
-        }
-
-        if (requesterMember.getRole() == GroupRole.OWNER && targetMember.getRole() == GroupRole.OWNER) {
-            throw new AccessDeniedException("Owners cannot remove other owners"); // Typically there's only one owner, but safe to check
-        }
-
-        group.getMembers().remove(targetMember); 
-        groupMemberRepository.delete(targetMember);
-
-
-        notificationService.sendNotification(
-                targetMember.getUser().getId(),
-                "You have been removed from the group: " + group.getName(),
-                "Removed from Group",
-                "GROUP_UPDATE"
-        );
+    if (requesterMember.getRole() == GroupRole.MEMBER) {
+      throw new AccessDeniedException("Members cannot remove other users");
     }
 
-    @Transactional
-    public void promoteMember(UUID groupId, UUID targetUserMemberShipId, UUID requesterId) {
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
-
-        GroupMember requesterMember = group.getMembers().stream()
-                .filter(member -> member.getUser().getId().equals(requesterId))
-                .findFirst()
-                .orElseThrow(() -> new AccessDeniedException("You are not an approved member of this group"));
-
-        if (requesterMember.getRole() == GroupRole.MEMBER) {
-            throw new AccessDeniedException("Only owners and admins can promote members");
-        }
-
-        if (requesterMember.getId().equals(targetUserMemberShipId)) {
-            throw new IllegalArgumentException("You cannot promote yourself.");
-        }
-
-        GroupMember targetMember = group.getMembers().stream()
-                .filter(member -> member.getId().equals(targetUserMemberShipId))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Target user is not a member of the group"));
-
-        if (targetMember.getRole() == GroupRole.OWNER) {
-            throw new IllegalArgumentException("Target user is already the owner");
-        }
-        
-        if (targetMember.getRole() == GroupRole.ADMIN) {
-            throw new IllegalArgumentException("Target user is already an admin");
-        }
-
-        targetMember.setRole(GroupRole.ADMIN);
-        groupMemberRepository.save(targetMember);
-
-        notificationService.sendNotification(
-                targetMember.getUser().getId(),
-                "You have been promoted to ADMIN in the group: " + group.getName(),
-                "Promoted to Admin",
-                "GROUP_ROLE_UPDATE"
-        );
+    if (requesterMember.getRole() == GroupRole.ADMIN && targetMember.getRole() != GroupRole.MEMBER) {
+      throw new AccessDeniedException("Admins can only remove regular members");
     }
 
-    @Transactional
-    public void demoteAdmin(UUID groupId, UUID targetUserMemberShipId, UUID requesterId) {
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
-
-        GroupMember requesterMember = group.getMembers().stream()
-                .filter(member -> member.getUser().getId().equals(requesterId) )
-                .findFirst()
-                .orElseThrow(() -> new AccessDeniedException("You are not an approved member of this group"));
-
-        if (requesterMember.getRole() != GroupRole.OWNER) {
-            throw new AccessDeniedException("Only the owner can demote an admin");
-        }
-
-        if (requesterMember.getId().equals(targetUserMemberShipId)) {
-            throw new IllegalArgumentException("You cannot demote yourself.");
-        }
-
-        GroupMember targetMember = group.getMembers().stream()
-                .filter(member -> member.getId().equals(targetUserMemberShipId))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Target user is not a member of the group"));
-
-        if (targetMember.getRole() == GroupRole.OWNER) {
-            throw new IllegalArgumentException("Cannot demote an owner");
-        }
-
-        if (targetMember.getRole() == GroupRole.MEMBER) {
-            throw new IllegalArgumentException("Target user is already a member");
-        }
-
-        targetMember.setRole(GroupRole.MEMBER);
-        groupMemberRepository.save(targetMember);
-
-        notificationService.sendNotification(
-                targetMember.getUser().getId(),
-                "You have been demoted to MEMBER in the group: " + group.getName(),
-                "Demoted to Member",
-                "GROUP_ROLE_UPDATE"
-        );
+    if (requesterMember.getRole() == GroupRole.OWNER && targetMember.getRole() == GroupRole.OWNER) {
+      throw new AccessDeniedException("Owners cannot remove other owners"); // Typically there's only one owner, but
+                                                                            // safe to check
     }
+
+    group.getMembers().remove(targetMember);
+    groupMemberRepository.delete(targetMember);
+
+    notificationService.sendNotification(
+        targetMember.getUser().getId(),
+        "You have been removed from the group: " + group.getName(),
+        "Removed from Group",
+        "GROUP_UPDATE");
+  }
+
+  @Transactional
+  public void promoteMember(UUID groupId, UUID targetUserMemberShipId, UUID requesterId) {
+    Group group = groupRepository.findById(groupId)
+        .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+    GroupMember requesterMember = group.getMembers().stream()
+        .filter(member -> member.getUser().getId().equals(requesterId))
+        .findFirst()
+        .orElseThrow(() -> new AccessDeniedException("You are not an approved member of this group"));
+
+    if (requesterMember.getRole() == GroupRole.MEMBER) {
+      throw new AccessDeniedException("Only owners and admins can promote members");
+    }
+
+    if (requesterMember.getId().equals(targetUserMemberShipId)) {
+      throw new IllegalArgumentException("You cannot promote yourself.");
+    }
+
+    GroupMember targetMember = group.getMembers().stream()
+        .filter(member -> member.getId().equals(targetUserMemberShipId))
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException("Target user is not a member of the group"));
+
+    if (targetMember.getRole() == GroupRole.OWNER) {
+      throw new IllegalArgumentException("Target user is already the owner");
+    }
+
+    if (targetMember.getRole() == GroupRole.ADMIN) {
+      throw new IllegalArgumentException("Target user is already an admin");
+    }
+
+    targetMember.setRole(GroupRole.ADMIN);
+    groupMemberRepository.save(targetMember);
+
+    notificationService.sendNotification(
+        targetMember.getUser().getId(),
+        "You have been promoted to ADMIN in the group: " + group.getName(),
+        "Promoted to Admin",
+        "GROUP_ROLE_UPDATE");
+  }
+
+  @Transactional
+  public void demoteAdmin(UUID groupId, UUID targetUserMemberShipId, UUID requesterId) {
+    Group group = groupRepository.findById(groupId)
+        .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+    GroupMember requesterMember = group.getMembers().stream()
+        .filter(member -> member.getUser().getId().equals(requesterId))
+        .findFirst()
+        .orElseThrow(() -> new AccessDeniedException("You are not an approved member of this group"));
+
+    if (requesterMember.getRole() != GroupRole.OWNER) {
+      throw new AccessDeniedException("Only the owner can demote an admin");
+    }
+
+    if (requesterMember.getId().equals(targetUserMemberShipId)) {
+      throw new IllegalArgumentException("You cannot demote yourself.");
+    }
+
+    GroupMember targetMember = group.getMembers().stream()
+        .filter(member -> member.getId().equals(targetUserMemberShipId))
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException("Target user is not a member of the group"));
+
+    if (targetMember.getRole() == GroupRole.OWNER) {
+      throw new IllegalArgumentException("Cannot demote an owner");
+    }
+
+    if (targetMember.getRole() == GroupRole.MEMBER) {
+      throw new IllegalArgumentException("Target user is already a member");
+    }
+
+    targetMember.setRole(GroupRole.MEMBER);
+    groupMemberRepository.save(targetMember);
+
+    notificationService.sendNotification(
+        targetMember.getUser().getId(),
+        "You have been demoted to MEMBER in the group: " + group.getName(),
+        "Demoted to Member",
+        "GROUP_ROLE_UPDATE");
+  }
+
+  public List<TopActiveGroupsResponse> getTopGroups() {
+    List<Group> TopGroups = groupRepository.findTopGroups(PageRequest.of(0, 5));
+    List<TopActiveGroupsResponse> res = new ArrayList<>();
+
+    TopGroups.forEach((g) -> res.add(
+        groupsMapper.toTopActiveGroupsResponse(
+            g.getName(),
+            g.getPrivacyLevel(),
+            g.getMembers().size())));
+    return res;
+  }
 }

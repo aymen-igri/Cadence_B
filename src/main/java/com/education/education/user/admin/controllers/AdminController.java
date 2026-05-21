@@ -1,11 +1,15 @@
 package com.education.education.user.admin.controllers;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.education.education.groups.DTO.response.TopActiveGroupsResponse;
+import com.education.education.groups.services.GroupService;
 import com.education.education.session.subSession.dto.request.HeatMapChartReq;
 import com.education.education.session.subSession.dto.response.HeatMapChart;
 import com.education.education.session.subSession.dto.response.StackedAreaChart;
@@ -28,6 +32,7 @@ public class AdminController {
   private final AdminService adminService;
   private final SubSessionService subSessionService;
   private final SubjectService subjectService;
+  private final GroupService groupService;
 
   @GetMapping("/cards")
   @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
@@ -49,8 +54,14 @@ public class AdminController {
 
   @GetMapping("/charts/heatMap")
   @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-  public ResponseEntity<HeatMapChart> HeatMapChartData(
+  public ResponseEntity<HeatMapChart> heatMapChartData(
       @RequestBody HeatMapChartReq req) {
     return ResponseEntity.ok(subSessionService.getHeatMapChartData(req.weekNumber(), req.year()));
+  }
+
+  @GetMapping("/tables/topGroups")
+  @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+  public ResponseEntity<List<TopActiveGroupsResponse>> topGroupsTable() {
+    return ResponseEntity.ok(groupService.getTopGroups());
   }
 }
