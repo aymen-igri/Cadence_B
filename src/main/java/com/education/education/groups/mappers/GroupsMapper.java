@@ -2,6 +2,7 @@ package com.education.education.groups.mappers;
 
 import org.springframework.stereotype.Component;
 
+import com.education.education.groups.DTO.response.ChartGroupsForUserRes;
 import com.education.education.groups.DTO.response.TopActiveGroupsResponse;
 import com.education.education.groups.enums.GroupPrivacy;
 
@@ -16,5 +17,13 @@ public class GroupsMapper {
         name,
         groupPrivacy,
         membersCount);
+  }
+
+  public ChartGroupsForUserRes toChartGroupsForUserRes(
+      String groupName,
+      Integer personalGroupActivity) {
+    return new ChartGroupsForUserRes(
+        groupName,
+        personalGroupActivity);
   }
 }
