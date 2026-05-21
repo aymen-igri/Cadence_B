@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.education.education.auth.deo.responses.MfaActivityRes;
+import com.education.education.auth.services.MfaSessionService;
 import com.education.education.groups.DTO.response.TopActiveGroupsResponse;
 import com.education.education.groups.services.GroupService;
 import com.education.education.session.subSession.dto.request.HeatMapChartReq;
@@ -33,6 +35,7 @@ public class AdminController {
   private final SubSessionService subSessionService;
   private final SubjectService subjectService;
   private final GroupService groupService;
+  private final MfaSessionService mfaSessionService;
 
   @GetMapping("/cards")
   @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
@@ -63,5 +66,11 @@ public class AdminController {
   @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
   public ResponseEntity<List<TopActiveGroupsResponse>> topGroupsTable() {
     return ResponseEntity.ok(groupService.getTopGroups());
+  }
+
+  @GetMapping("/tables/mfaActivities")
+  @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+  public ResponseEntity<List<MfaActivityRes>> mfaActivitiesTable() {
+    return ResponseEntity.ok(mfaSessionService.getMfaActivities());
   }
 }
