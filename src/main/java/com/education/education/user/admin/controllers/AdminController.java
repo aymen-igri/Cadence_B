@@ -1,6 +1,7 @@
 package com.education.education.user.admin.controllers;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.education.education.auth.deo.responses.MfaActivityRes;
@@ -24,6 +26,7 @@ import com.education.education.subject.services.SubjectService;
 import com.education.education.user.admin.dto.res.Cards;
 import com.education.education.user.admin.services.AdminService;
 import com.education.education.user.user.dto.request.UserTableReq;
+import com.education.education.user.user.dto.response.UserDetailsRes;
 import com.education.education.user.user.dto.response.UserSearchResponse;
 import com.education.education.user.user.services.UserService;
 
@@ -88,5 +91,12 @@ public class AdminController {
         request.request(),
         request.page(),
         request.size()));
+  }
+
+  @GetMapping("/tables/userDetails")
+  @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+  public ResponseEntity<UserDetailsRes> userDetailsTable(
+      @RequestParam UUID userId) {
+    return ResponseEntity.ok(userService.getUserDetails(userId));
   }
 }

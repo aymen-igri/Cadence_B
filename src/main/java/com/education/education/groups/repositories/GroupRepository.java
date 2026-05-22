@@ -1,5 +1,6 @@
 package com.education.education.groups.repositories;
 
+import com.education.education.groups.DTO.response.ChartGroupsForUserRes;
 import com.education.education.groups.entities.Group;
 
 import org.springframework.data.domain.Pageable;
@@ -18,4 +19,12 @@ public interface GroupRepository extends JpaRepository<Group, UUID> {
       " (SELECT COUNT(s) FROM SharedSession s WHERE s.group = g)" +
       ") DESC")
   List<Group> findTopGroups(Pageable pageable);
+
+  @Query("SELECT new com.education.education.groups.DTO.response.ChartGroupsForUserRes(g.name, " +
+      "(SELECT COUNT(m) FROM GroupMessage m WHERE m.group = g AND m.sender.id = :userId) + " +
+      "(SELECT COUNT(s) FROM SharedSession s WHERE s.group = g AND s.sharedByUser.id = :userId)) " +
+      "FROM Group g " +
+      "JOIN g.members gm " +
+      "WHERE gm.user.id = :userId")
+  List<ChartGroupsForUserRes> countActivityForUser(UUID userId);
 }

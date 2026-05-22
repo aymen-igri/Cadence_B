@@ -51,12 +51,14 @@ public class WeeklySessionPlanMapper {
 
   public ChartWeeklySessionPlanForUserRes toChartWeeklySessionPlanForUserRes(
       Integer totalWeeklySession,
+      Integer activeWeeklySession,
       Integer completedWeeklySession,
       Integer pendingWeeklySession,
       Integer incompletedWeeklySession) {
     return new ChartWeeklySessionPlanForUserRes(
         totalWeeklySession,
         completedWeeklySession,
+        activeWeeklySession,
         pendingWeeklySession,
         incompletedWeeklySession);
   }

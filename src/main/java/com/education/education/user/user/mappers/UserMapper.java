@@ -1,10 +1,13 @@
 package com.education.education.user.user.mappers;
 
+import com.education.education.groups.DTO.response.ChartGroupsForUserRes;
+import com.education.education.session.weeklySessionPlan.dto.response.ChartWeeklySessionPlanForUserRes;
 import com.education.education.user.user.dto.request.AddUserRequest;
 import com.education.education.user.user.dto.request.SignInDTORequest;
 import com.education.education.user.user.dto.request.UpdateUserDataReq;
 import com.education.education.user.user.dto.response.AddUserResponse;
 import com.education.education.user.user.dto.response.UpdateUserDataRes;
+import com.education.education.user.user.dto.response.UserDetailsRes;
 import com.education.education.user.user.dto.response.UserProfileRes;
 import com.education.education.user.user.dto.response.UserSearchResponse;
 import com.education.education.user.user.entities.User;
@@ -13,6 +16,7 @@ import com.education.education.user.user.enums.EStatus;
 import com.education.education.user.user.repositories.UserRepository;
 import lombok.AllArgsConstructor;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Pageable;
@@ -108,5 +112,27 @@ public class UserMapper {
         email,
         phone,
         status);
+  }
+
+  public UserDetailsRes toUserDetailsRes(
+      UUID id,
+      String firstName,
+      String lastName,
+      EGender gender,
+      String email,
+      String phone,
+      EStatus status,
+      List<ChartGroupsForUserRes> groupsForUser,
+      ChartWeeklySessionPlanForUserRes chartWeeklySessionPlanForUserRes) {
+    return new UserDetailsRes(
+        id,
+        firstName,
+        lastName,
+        gender,
+        email,
+        phone,
+        status,
+        groupsForUser,
+        chartWeeklySessionPlanForUserRes);
   }
 }

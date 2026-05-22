@@ -21,7 +21,7 @@ public class GroupsMapper {
 
   public ChartGroupsForUserRes toChartGroupsForUserRes(
       String groupName,
-      Integer personalGroupActivity) {
+      Long personalGroupActivity) {
     return new ChartGroupsForUserRes(
         groupName,
         personalGroupActivity);

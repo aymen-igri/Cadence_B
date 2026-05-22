@@ -1,5 +1,11 @@
 package com.education.education.user.user.services;
 
+import com.education.education.groups.DTO.response.ChartGroupsForUserRes;
+import com.education.education.groups.repositories.GroupRepository;
+import com.education.education.session.weeklySessionPlan.dto.response.ChartWeeklySessionPlanForUserRes;
+import com.education.education.session.weeklySessionPlan.enums.ESessionStatus;
+import com.education.education.session.weeklySessionPlan.mappers.WeeklySessionPlanMapper;
+import com.education.education.session.weeklySessionPlan.repositories.WeeklySessionPlanRepository;
 import com.education.education.user.role.dto.request.AddRoleToUserRequest;
 import com.education.education.user.role.services.RoleService;
 import com.education.education.user.user.dto.request.AddUserRequest;
@@ -7,6 +13,7 @@ import com.education.education.user.user.dto.request.UpdateUserDataReq;
 import com.education.education.user.user.dto.request.UserSearchRequest;
 import com.education.education.user.user.dto.response.AddUserResponse;
 import com.education.education.user.user.dto.response.UpdateUserDataRes;
+import com.education.education.user.user.dto.response.UserDetailsRes;
 import com.education.education.user.user.dto.response.UserProfileRes;
 import com.education.education.user.user.dto.response.UserSearchResponse;
 import com.education.education.user.user.entities.User;
@@ -14,6 +21,9 @@ import com.education.education.user.user.mappers.UserMapper;
 import com.education.education.user.user.repositories.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+
+import java.util.List;
+import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -30,6 +40,9 @@ public class UserService {
   private final UserMapper userMapper;
   private final UserRepository userRepository;
   private final RoleService roleService;
+  private final WeeklySessionPlanRepository weeklySessionPlanRepository;
+  private final GroupRepository groupRepository;
+  private final WeeklySessionPlanMapper weeklySessionPlanMapper;
 
   public AddUserResponse addUser(AddUserRequest request) {
     User user = userMapper.toUser(request);
@@ -111,5 +124,30 @@ public class UserService {
         u.getPhone(),
         u.getStatus(),
         pageable));
+  }
+
+  public UserDetailsRes getUserDetails(UUID userId) {
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new RuntimeException("User not found"));
+
+    ChartWeeklySessionPlanForUserRes sessionsStatis = weeklySessionPlanMapper.toChartWeeklySessionPlanForUserRes(
+        weeklySessionPlanRepository.countTotalByUserId(userId),
+        weeklySessionPlanRepository.countByStatus(ESessionStatus.COMPLETED, userId),
+        weeklySessionPlanRepository.countByStatus(ESessionStatus.ACTIVE, userId),
+        weeklySessionPlanRepository.countByStatus(ESessionStatus.UPCOMING, userId),
+        weeklySessionPlanRepository.countByStatus(ESessionStatus.INCOMPLETED, userId));
+
+    List<ChartGroupsForUserRes> groupStatis = groupRepository.countActivityForUser(userId);
+
+    return userMapper.toUserDetailsRes(
+        user.getId(),
+        user.getFirstName(),
+        user.getLastName(),
+        user.getGender(),
+        user.getEmail(),
+        user.getPhone(),
+        user.getStatus(),
+        groupStatis,
+        sessionsStatis);
   }
 }

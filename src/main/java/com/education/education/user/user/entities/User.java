@@ -21,55 +21,51 @@ import java.util.UUID;
 @Setter
 public class User extends AuditableEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "users_id")
-    private UUID id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.AUTO)
+  @Column(name = "users_id")
+  private UUID id;
 
-    @Column(nullable = false)
-    private String firstName;
+  @Column(nullable = false)
+  private String firstName;
 
-    @Column(nullable = false)
-    private String lastName;
+  @Column(nullable = false)
+  private String lastName;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private EGender gender;
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private EGender gender;
 
-    @Column(nullable = false, unique = true)
-    private String email;
+  @Column(nullable = false, unique = true)
+  private String email;
 
-    @Column(nullable = false)
-    private String phone;
+  @Column(nullable = false)
+  private String phone;
 
-    @Column(nullable = false, unique = true)
-    private String username;
+  @Column(nullable = false, unique = true)
+  private String username;
 
-    @Column(nullable = false)
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    private String password;
+  @Column(nullable = false)
+  @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+  private String password;
 
-    @Column(nullable = false, columnDefinition = "boolean default false")
-    private boolean isTotpEnabled = false;
+  @Column(nullable = false, columnDefinition = "boolean default false")
+  private boolean isTotpEnabled = false;
 
-    private String totpSecret;
+  private String totpSecret;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private EStatus status;
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private EStatus status;
 
-    @Column
-    private String profilePic;
+  @Column
+  private String profilePic;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "users_roles",
-            joinColumns = @JoinColumn(name = "users_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
-    private List<Role> role;
+  @ManyToMany(fetch = FetchType.EAGER)
+  @JoinTable(name = "users_roles", joinColumns = @JoinColumn(name = "users_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
+  private List<Role> role;
 
-    @OneToMany(mappedBy = "createdBy", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Subject> createdSubjects;
+  @OneToMany(mappedBy = "createdBy", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<Subject> createdSubjects;
 
 }

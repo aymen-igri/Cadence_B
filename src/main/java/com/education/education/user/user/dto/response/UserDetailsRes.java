@@ -15,7 +15,6 @@ public record UserDetailsRes(
     EGender gender,
     String email,
     String phone,
-    boolean isTotpEnabled,
     EStatus status,
     List<ChartGroupsForUserRes> groupsForUser,
     ChartWeeklySessionPlanForUserRes chartWeeklySessionPlanForUserRes) {
