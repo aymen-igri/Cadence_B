@@ -5,7 +5,6 @@ import com.education.education.user.user.dto.request.SignInDTORequest;
 import com.education.education.user.user.dto.request.UpdateUserDataReq;
 import com.education.education.user.user.dto.response.AddUserResponse;
 import com.education.education.user.user.dto.response.UpdateUserDataRes;
-import com.education.education.user.user.dto.response.UserDetailsRes;
 import com.education.education.user.user.dto.response.UserProfileRes;
 import com.education.education.user.user.dto.response.UserSearchResponse;
 import com.education.education.user.user.entities.User;
@@ -89,6 +88,7 @@ public class UserMapper {
         user.getStatus(),
         user.getProfilePic(),
         user.getRole().get(0).getRole());
+  }
 
   public UserSearchResponse toUserSearchResponse(
       UUID id,

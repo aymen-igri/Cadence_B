@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,8 +22,10 @@ import com.education.education.subject.dto.response.DoughnutChart;
 import com.education.education.subject.services.SubjectService;
 import com.education.education.user.admin.dto.res.Cards;
 import com.education.education.user.admin.services.AdminService;
+import com.education.education.user.user.dto.request.UserSearchRequest;
+import com.education.education.user.user.dto.response.UserSearchResponse;
+import com.education.education.user.user.services.UserService;
 
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.AllArgsConstructor;
 
@@ -36,6 +40,7 @@ public class AdminController {
   private final SubjectService subjectService;
   private final GroupService groupService;
   private final MfaSessionService mfaSessionService;
+  private final UserService userService;
 
   @GetMapping("/cards")
   @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
@@ -72,5 +77,12 @@ public class AdminController {
   @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
   public ResponseEntity<List<MfaActivityRes>> mfaActivitiesTable() {
     return ResponseEntity.ok(mfaSessionService.getMfaActivities());
+  }
+
+  @PostMapping("/tables/searchUsers")
+  @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+  public ResponseEntity<List<UserSearchResponse>> searchedUserTable(
+      @RequestBody UserSearchRequest request) {
+    return ResponseEntity.ok(userService.getSearchedGeneralUsers(request));
   }
 }
