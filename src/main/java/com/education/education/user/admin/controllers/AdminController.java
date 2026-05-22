@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -98,5 +99,21 @@ public class AdminController {
   public ResponseEntity<UserDetailsRes> userDetailsTable(
       @RequestParam UUID userId) {
     return ResponseEntity.ok(userService.getUserDetails(userId));
+  }
+
+  @PatchMapping("/users/ban")
+  @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+  public ResponseEntity<Void> banUser(
+      @RequestParam UUID userId) {
+    userService.banUser(userId);
+    return ResponseEntity.ok().build();
+  }
+
+  @PatchMapping("/users/unban")
+  @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+  public ResponseEntity<Void> unbanUser(
+      @RequestParam UUID userId) {
+    userService.unbanUser(userId);
+    return ResponseEntity.ok().build();
   }
 }

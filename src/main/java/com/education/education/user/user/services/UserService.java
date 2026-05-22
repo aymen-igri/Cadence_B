@@ -150,4 +150,12 @@ public class UserService {
         groupStatis,
         sessionsStatis);
   }
+
+  public void banUser(UUID userId) {
+    userRepository.banUser(userId);
+  }
+
+  public void unbanUser(UUID userId) {
+    userRepository.unbanUser(userId);
+  }
 }
