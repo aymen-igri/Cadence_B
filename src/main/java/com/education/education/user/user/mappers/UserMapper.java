@@ -15,6 +15,7 @@ import lombok.AllArgsConstructor;
 
 import java.util.UUID;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -97,7 +98,8 @@ public class UserMapper {
       EGender gender,
       String email,
       String phone,
-      EStatus status) {
+      EStatus status,
+      Pageable pageable) {
     return new UserSearchResponse(
         id,
         firstName,

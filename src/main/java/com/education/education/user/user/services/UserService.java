@@ -15,9 +15,10 @@ import com.education.education.user.user.repositories.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -83,33 +84,32 @@ public class UserService {
     return "%" + s.trim().toLowerCase() + "%";
   }
 
-  public List<UserSearchResponse> getSearchedGeneralUsers(UserSearchRequest request) {
+  public Page<UserSearchResponse> getSearchedGeneralUsers(UserSearchRequest request, int page, int size) {
+
+    Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
     String fName = this.clean(request.firstName());
     String lName = this.clean(request.lastName());
     String email = this.clean(request.email());
     String phone = this.clean(request.phone());
 
-    List<User> filtredSearchedUsers = userRepository.searchGeneralUser(
+    Page<User> userPage = userRepository.searchGeneralUser(
         fName,
         lName,
         email,
         phone,
         request.gender(),
-        request.status());
+        request.status(),
+        pageable);
 
-    List<UserSearchResponse> searchedUsers = new ArrayList<>();
-
-    filtredSearchedUsers.forEach(u -> searchedUsers.add(
-        userMapper.toUserSearchResponse(
-            u.getId(),
-            u.getFirstName(),
-            u.getLastName(),
-            u.getGender(),
-            u.getEmail(),
-            u.getPhone(),
-            u.getStatus())));
-
-    return searchedUsers;
+    return userPage.map(u -> userMapper.toUserSearchResponse(
+        u.getId(),
+        u.getFirstName(),
+        u.getLastName(),
+        u.getGender(),
+        u.getEmail(),
+        u.getPhone(),
+        u.getStatus(),
+        pageable));
   }
 }

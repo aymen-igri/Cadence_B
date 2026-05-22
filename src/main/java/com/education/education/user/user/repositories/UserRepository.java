@@ -4,10 +4,11 @@ import com.education.education.user.user.entities.User;
 import com.education.education.user.user.enums.EGender;
 import com.education.education.user.user.enums.EStatus;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import java.util.List;
 import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
@@ -25,11 +26,12 @@ public interface UserRepository extends JpaRepository<User, UUID> {
       "AND (:phone IS NULL OR u.phone LIKE :phone) " +
       "AND (:gender IS NULL OR u.gender = :gender) " +
       "AND (:status IS NULL OR u.status = :status)")
-  List<User> searchGeneralUser(
+  Page<User> searchGeneralUser(
       String firstName,
       String lastName,
       String email,
       String phone,
       EGender gender,
-      EStatus status);
+      EStatus status,
+      Pageable pageable);
 }

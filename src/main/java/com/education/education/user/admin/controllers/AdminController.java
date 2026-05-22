@@ -2,6 +2,7 @@ package com.education.education.user.admin.controllers;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,7 +23,7 @@ import com.education.education.subject.dto.response.DoughnutChart;
 import com.education.education.subject.services.SubjectService;
 import com.education.education.user.admin.dto.res.Cards;
 import com.education.education.user.admin.services.AdminService;
-import com.education.education.user.user.dto.request.UserSearchRequest;
+import com.education.education.user.user.dto.request.UserTableReq;
 import com.education.education.user.user.dto.response.UserSearchResponse;
 import com.education.education.user.user.services.UserService;
 
@@ -81,8 +82,11 @@ public class AdminController {
 
   @PostMapping("/tables/searchUsers")
   @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-  public ResponseEntity<List<UserSearchResponse>> searchedUserTable(
-      @RequestBody UserSearchRequest request) {
-    return ResponseEntity.ok(userService.getSearchedGeneralUsers(request));
+  public ResponseEntity<Page<UserSearchResponse>> searchedUserTable(
+      @RequestBody UserTableReq request) {
+    return ResponseEntity.ok(userService.getSearchedGeneralUsers(
+        request.request(),
+        request.page(),
+        request.size()));
   }
 }
