@@ -4,6 +4,7 @@ import com.education.education.groups.DTO.request.CreateGroupRequest;
 import com.education.education.groups.DTO.request.UpdateGroupRequest;
 import com.education.education.groups.DTO.response.GroupMemberResponse;
 import com.education.education.groups.DTO.response.GroupResponse;
+import com.education.education.groups.DTO.response.GroupSearchResponse;
 import com.education.education.groups.entities.Group;
 import com.education.education.groups.entities.GroupMember;
 import com.education.education.groups.enums.GroupRole;
@@ -23,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 
 import java.time.LocalDateTime;
@@ -551,6 +553,7 @@ public class GroupService {
         "GROUP_ROLE_UPDATE");
   }
 
+  @Transactional
   public List<TopActiveGroupsResponse> getTopGroups() {
     List<Group> TopGroups = groupRepository.findTopGroups(PageRequest.of(0, 5));
     List<TopActiveGroupsResponse> res = new ArrayList<>();
@@ -561,5 +564,19 @@ public class GroupService {
             g.getPrivacyLevel(),
             g.getMembers().size())));
     return res;
+  }
+
+  @Transactional
+  public List<GroupSearchResponse> getSearchGroups(
+      String name,
+      GroupPrivacy privacyLevel,
+      Integer page,
+      Integer size) {
+    Pageable pageable = PageRequest.of(page, size);
+
+    return groupRepository.searchGroups(
+        name,
+        privacyLevel,
+        pageable);
   }
 }

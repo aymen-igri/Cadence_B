@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.education.education.auth.deo.responses.MfaActivityRes;
 import com.education.education.auth.services.MfaSessionService;
+import com.education.education.groups.DTO.request.GroupsTableReq;
+import com.education.education.groups.DTO.response.GroupSearchResponse;
 import com.education.education.groups.DTO.response.TopActiveGroupsResponse;
 import com.education.education.groups.services.GroupService;
 import com.education.education.session.subSession.dto.request.HeatMapChartReq;
@@ -115,5 +117,16 @@ public class AdminController {
       @RequestParam UUID userId) {
     userService.unbanUser(userId);
     return ResponseEntity.ok().build();
+  }
+
+  @PostMapping("/groups/tables/searchGroups")
+  @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+  public ResponseEntity<List<GroupSearchResponse>> searchedGroupTable(
+      @RequestBody GroupsTableReq request) {
+    return ResponseEntity.ok(groupService.getSearchGroups(
+        request.groupData().name(),
+        request.groupData().privacyLevel(),
+        request.page(),
+        request.size()));
   }
 }

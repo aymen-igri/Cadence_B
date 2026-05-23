@@ -1,7 +1,9 @@
 package com.education.education.groups.repositories;
 
 import com.education.education.groups.DTO.response.ChartGroupsForUserRes;
+import com.education.education.groups.DTO.response.GroupSearchResponse;
 import com.education.education.groups.entities.Group;
+import com.education.education.groups.enums.GroupPrivacy;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -27,4 +29,9 @@ public interface GroupRepository extends JpaRepository<Group, UUID> {
       "JOIN g.members gm " +
       "WHERE gm.user.id = :userId")
   List<ChartGroupsForUserRes> countActivityForUser(UUID userId);
+
+  @Query("SELECT g.id, g.name, g.privacyLevel FROM Group g " +
+      "WHERE (:name IS NULL OR LOWER(g.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
+      "AND (:privacyLevel IS NULL OR g.privacyLevel = :privacyLevel)")
+  List<GroupSearchResponse> searchGroups(String name, GroupPrivacy privacyLevel, Pageable pageable);
 }
