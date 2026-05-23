@@ -47,44 +47,44 @@ public class AdminController {
   private final MfaSessionService mfaSessionService;
   private final UserService userService;
 
-  @GetMapping("/cards")
+  @GetMapping("/dashboard/cards")
   @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
   public ResponseEntity<Cards> cards() {
     return ResponseEntity.ok(adminService.cards());
   }
 
-  @GetMapping("/charts/stackedArea")
+  @GetMapping("/dashboard/charts/stackedArea")
   @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
   public ResponseEntity<StackedAreaChart> stackedAreaChartData() {
     return ResponseEntity.ok(subSessionService.getStackedAreaChartData());
   }
 
-  @GetMapping("/charts/doughnut")
+  @GetMapping("/dashboard/charts/doughnut")
   @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
   public ResponseEntity<DoughnutChart> doughnutChartData() {
     return ResponseEntity.ok(subjectService.getDoughnutChartData());
   }
 
-  @GetMapping("/charts/heatMap")
+  @PostMapping("/dashboard/charts/heatMap")
   @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
   public ResponseEntity<HeatMapChart> heatMapChartData(
       @RequestBody HeatMapChartReq req) {
     return ResponseEntity.ok(subSessionService.getHeatMapChartData(req.weekNumber(), req.year()));
   }
 
-  @GetMapping("/tables/topGroups")
+  @GetMapping("/dashboard/tables/topGroups")
   @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
   public ResponseEntity<List<TopActiveGroupsResponse>> topGroupsTable() {
     return ResponseEntity.ok(groupService.getTopGroups());
   }
 
-  @GetMapping("/tables/mfaActivities")
+  @GetMapping("/dashboard/tables/mfaActivities")
   @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
   public ResponseEntity<List<MfaActivityRes>> mfaActivitiesTable() {
     return ResponseEntity.ok(mfaSessionService.getMfaActivities());
   }
 
-  @PostMapping("/tables/searchUsers")
+  @PostMapping("/users/tables/searchUsers")
   @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
   public ResponseEntity<Page<UserSearchResponse>> searchedUserTable(
       @RequestBody UserTableReq request) {
@@ -94,7 +94,7 @@ public class AdminController {
         request.size()));
   }
 
-  @GetMapping("/tables/userDetails")
+  @GetMapping("/users/tables/userDetails")
   @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
   public ResponseEntity<UserDetailsRes> userDetailsTable(
       @RequestParam UUID userId) {

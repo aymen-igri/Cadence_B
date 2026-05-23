@@ -122,8 +122,7 @@ public class UserService {
         u.getGender(),
         u.getEmail(),
         u.getPhone(),
-        u.getStatus(),
-        pageable));
+        u.getStatus()));
   }
 
   public UserDetailsRes getUserDetails(UUID userId) {
