@@ -4,5 +4,5 @@ import java.time.LocalDate;
 
 public record GroupMessageActivityDataRes(
     LocalDate date,
-    Integer messageCount) {
+    Long messageCount) {
 }

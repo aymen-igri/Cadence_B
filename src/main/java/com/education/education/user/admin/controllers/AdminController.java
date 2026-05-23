@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.education.education.auth.deo.responses.MfaActivityRes;
 import com.education.education.auth.services.MfaSessionService;
 import com.education.education.groups.DTO.request.GroupsTableReq;
+import com.education.education.groups.DTO.response.GroupDetailsRes;
 import com.education.education.groups.DTO.response.GroupSearchResponse;
 import com.education.education.groups.DTO.response.TopActiveGroupsResponse;
 import com.education.education.groups.services.GroupService;
@@ -128,5 +129,12 @@ public class AdminController {
         request.groupData().privacyLevel(),
         request.page(),
         request.size()));
+  }
+
+  @GetMapping("/groups/groupDetails")
+  @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+  public ResponseEntity<GroupDetailsRes> groupDetailsTable(
+      @RequestParam UUID groupId) {
+    return ResponseEntity.ok(groupService.getGroupDetails(groupId));
   }
 }

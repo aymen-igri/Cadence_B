@@ -11,6 +11,9 @@ import java.util.UUID;
 
 @Repository
 public interface GroupJoinRequestRepository extends JpaRepository<GroupJoinRequest, UUID> {
-    List<GroupJoinRequest> findByGroupIdAndStatus(UUID groupId, JoinRequestStatus status);
-    Optional<GroupJoinRequest> findByGroupIdAndUserId(UUID groupId, UUID userId);
+  List<GroupJoinRequest> findByGroupIdAndStatus(UUID groupId, JoinRequestStatus status);
+
+  Optional<GroupJoinRequest> findByGroupIdAndUserId(UUID groupId, UUID userId);
+
+  Integer countByGroupIdAndStatus(UUID groupId, JoinRequestStatus status);
 }

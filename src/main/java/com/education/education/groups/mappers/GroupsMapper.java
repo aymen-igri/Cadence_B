@@ -81,7 +81,7 @@ public class GroupsMapper {
 
   public GroupMessageActivityDataRes toGroupMessageActivityDataRes(
       LocalDate date,
-      Integer messageCount) {
+      Long messageCount) {
     return new GroupMessageActivityDataRes(
         date,
         messageCount);

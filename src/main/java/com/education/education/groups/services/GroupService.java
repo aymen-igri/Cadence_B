@@ -2,7 +2,11 @@ package com.education.education.groups.services;
 
 import com.education.education.groups.DTO.request.CreateGroupRequest;
 import com.education.education.groups.DTO.request.UpdateGroupRequest;
+import com.education.education.groups.DTO.response.GroupDetailsRes;
+import com.education.education.groups.DTO.response.GroupJoinDataRes;
 import com.education.education.groups.DTO.response.GroupMemberResponse;
+import com.education.education.groups.DTO.response.GroupMembersDataRes;
+import com.education.education.groups.DTO.response.GroupMessageActivityDataRes;
 import com.education.education.groups.DTO.response.GroupResponse;
 import com.education.education.groups.DTO.response.GroupSearchResponse;
 import com.education.education.groups.entities.Group;
@@ -10,6 +14,7 @@ import com.education.education.groups.entities.GroupMember;
 import com.education.education.groups.enums.GroupRole;
 import com.education.education.groups.enums.GroupPrivacy;
 import com.education.education.groups.repositories.GroupMemberRepository;
+import com.education.education.groups.repositories.GroupMessageRepository;
 import com.education.education.groups.repositories.GroupRepository;
 import com.education.education.groups.repositories.GroupJoinRequestRepository;
 import com.education.education.groups.entities.GroupJoinRequest;
@@ -44,6 +49,7 @@ public class GroupService {
   private final GroupJoinRequestRepository groupJoinRequestRepository;
   private final NotificationService notificationService;
   private final GroupsMapper groupsMapper;
+  private final GroupMessageRepository groupMessageRespository;
 
   @Transactional
   public GroupResponse createGroup(CreateGroupRequest request, UUID creatorId) {
@@ -578,5 +584,36 @@ public class GroupService {
         name,
         privacyLevel,
         pageable);
+  }
+
+  @Transactional
+  public GroupDetailsRes getGroupDetails(UUID groupId) {
+    Group group = groupRepository.findById(groupId)
+        .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+    GroupJoinDataRes joinReqData = groupsMapper.toGroupJoinbuttonMapper(
+        groupJoinRequestRepository.countByGroupIdAndStatus(groupId, JoinRequestStatus.PENDING),
+        groupJoinRequestRepository.countByGroupIdAndStatus(groupId, JoinRequestStatus.APPROVED),
+        groupJoinRequestRepository.countByGroupIdAndStatus(groupId, JoinRequestStatus.REJECTED));
+
+    List<GroupMembersDataRes> members = groupMemberRepository.findByGroupId(groupId).stream()
+        .map(data -> groupsMapper.toGroupMembersDataRes(
+            data.getUser().getId(),
+            data.getUser().getFirstName(),
+            data.getUser().getLastName(),
+            data.getRole(),
+            data.getJoinedAt().toLocalDate()))
+        .collect(Collectors.toList());
+
+    List<GroupMessageActivityDataRes> messageActivity = groupMessageRespository.findMessageActivityByGroupId(groupId);
+
+    return groupsMapper.toGroupDetailsRes(
+        group.getId(),
+        group.getName(),
+        group.getDescription(),
+        group.getPrivacyLevel(),
+        joinReqData,
+        members,
+        messageActivity);
   }
 }
