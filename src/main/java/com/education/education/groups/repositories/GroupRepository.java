@@ -30,7 +30,8 @@ public interface GroupRepository extends JpaRepository<Group, UUID> {
       "WHERE gm.user.id = :userId")
   List<ChartGroupsForUserRes> countActivityForUser(UUID userId);
 
-  @Query("SELECT g.id, g.name, g.privacyLevel FROM Group g " +
+  @Query("SELECT new com.education.education.groups.DTO.response.GroupSearchResponse(g.id, g.name, g.privacyLevel) FROM Group g "
+      +
       "WHERE (:name IS NULL OR LOWER(g.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
       "AND (:privacyLevel IS NULL OR g.privacyLevel = :privacyLevel)")
   List<GroupSearchResponse> searchGroups(String name, GroupPrivacy privacyLevel, Pageable pageable);

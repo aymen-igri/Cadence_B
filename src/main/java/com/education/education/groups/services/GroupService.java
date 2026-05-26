@@ -602,7 +602,7 @@ public class GroupService {
             data.getUser().getFirstName(),
             data.getUser().getLastName(),
             data.getRole(),
-            data.getJoinedAt().toLocalDate()))
+            data.getJoinedAt()))
         .collect(Collectors.toList());
 
     List<GroupMessageActivityDataRes> messageActivity = groupMessageRespository.findMessageActivityByGroupId(groupId);

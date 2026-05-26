@@ -1,6 +1,7 @@
 package com.education.education.groups.mappers;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.springframework.stereotype.Component;
@@ -70,13 +71,13 @@ public class GroupsMapper {
       String firstName,
       String lastName,
       GroupRole role,
-      LocalDate joinedAt) {
+      LocalDateTime joinedAt) {
     return new GroupMembersDataRes(
         id,
         firstName,
         lastName,
         role,
-        joinedAt);
+        joinedAt != null ? joinedAt.toLocalDate() : LocalDate.now());
   }
 
   public GroupMessageActivityDataRes toGroupMessageActivityDataRes(
