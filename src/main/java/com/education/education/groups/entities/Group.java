@@ -2,6 +2,8 @@ package com.education.education.groups.entities;
 
 import com.education.education.base.auditableEntity.AuditableEntity;
 import com.education.education.groups.enums.GroupPrivacy;
+import com.education.education.session.sharedSession.entities.SharedSession;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -39,4 +41,12 @@ public class Group extends AuditableEntity {
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<GroupJoinRequest> joinRequests = new ArrayList<>();
+
+    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<GroupMessage> messages = new ArrayList<>();
+
+    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<SharedSession> sharedSessions = new ArrayList<>();
 }
