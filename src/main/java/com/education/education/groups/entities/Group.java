@@ -35,4 +35,8 @@ public class Group extends AuditableEntity {
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<GroupMember> members = new ArrayList<>();
+
+    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<GroupJoinRequest> joinRequests = new ArrayList<>();
 }
