@@ -1,11 +1,11 @@
 <div align="center">
 
   <a href="#">
-    <img src="src/main/resources/images/LogoDark.webp" alt="EduSync Logo" width="400" height="120">
+    <img src="src/main/resources/images/LogoDark.webp" alt="Cadence Logo" width="400" height="120">
   </a>
 
-  <h1>Study Platform - Backend API</h1>
-  <p><strong>Collaborative Study | Smart Session Generation | Real-time Group Learning</strong></p>
+  <h1>Cadence Platform - Backend API</h1>
+  <p><strong>Collaborative Study | Smart Session Generation | Real-time Group Learning | Secure Authentication</strong></p>
 
   <div>
     <img src="https://img.shields.io/badge/Java-21-%23ED8B00" alt="Java 21">
@@ -30,18 +30,27 @@ Built with **Spring Boot 4.0.4** and **Java 21**, the platform offers a secure, 
 
 ## Getting Started
 
-### Prerequisites
+Follow these steps to get the project up and running on your local machine.
 
+### 1. Prerequisites
+
+Ensure you have the following installed:
 *   **Java 21** (JDK)
 *   **Maven 3.9+**
 *   **PostgreSQL 16+**
-*   **Docker** (optional)
-*   **Cloudinary Account** (for media)
-*   **SMTP Service** (for emails)
+*   **Docker** (optional, for containerized execution)
 
-### Environment Setup
+### 2. Database Setup
 
-Create a `.env` file in the root directory:
+1.  Open your PostgreSQL terminal or a GUI like pgAdmin.
+2.  Create a new database named `edusync`:
+    ```sql
+    CREATE DATABASE edusync;
+    ```
+
+### 3. Environment Configuration
+
+Create a `.env` file in the root directory of the project and populate it with your credentials:
 
 ```env
 # Database Configuration
@@ -65,27 +74,29 @@ CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 ```
 
-### Run Locally
+### 4. Running the Application
+
+#### Option A: Local Execution (Maven)
 
 ```bash
-# Clone the repository
-git clone https://github.com/your-org/study-platform-backend.git
-cd study-platform-backend
-
-# Build and run
+# Build the project and install dependencies
 mvn clean install
+
+# Run the Spring Boot application
 mvn spring-boot:run
 ```
 
-### Run with Docker
+#### Option B: Docker Execution
 
 ```bash
-# Build the image
+# Build the Docker image
 docker build -t edusync-backend .
 
-# Run the container
+# Run the container using the .env file
 docker run -p 8080:8080 --env-file .env edusync-backend
 ```
+
+The server will start at `http://localhost:8080`.
 
 ---
 
@@ -183,5 +194,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 <hr />
 
 <div align="center">
-  <p>EduSync Platform - Backend API</p>
+  <p>Cadence Platform - Backend API</p>
 </div>
