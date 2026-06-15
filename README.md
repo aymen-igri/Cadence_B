@@ -1,5 +1,9 @@
 <div align="center">
 
+  <a href="#">
+    <img src="src/main/resources/images/LogoDark.webp" alt="EduSync Logo" width="400" height="120">
+  </a>
+
   <h1>Study Platform - Backend API</h1>
   <p><strong>Collaborative Study | Smart Session Generation | Real-time Group Learning</strong></p>
 
